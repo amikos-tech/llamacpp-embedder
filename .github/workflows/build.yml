@@ -644,7 +644,7 @@ jobs:
         id: clone_kompute
         if: ${{ matrix.build == 'kompute-x64' }}
         run: |
-          git submodule update --init vendor/llama.cpp/ggml/src/kompute
+          git submodule update --init --recursive
 
       - name: Download OpenBLAS
         id: get_openblas
