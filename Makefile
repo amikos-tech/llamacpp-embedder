@@ -16,4 +16,4 @@ python-clean:
 
 lib:
 	rm -rf build && mkdir build
-	cd build && cmake -DLLAMA_FATAL_WARNINGS=ON -DGGML_METAL_EMBED_LIBRARY=ON -DGGML_RPC=ON -DBUILD_SHARED_LIBS=ON .. && cmake --build . --config Release -j $(sysctl -n hw.logicalcpu)
+	cd build && cmake -DLLAMA_FATAL_WARNINGS=ON ${CMAKE_FLAGS} -DGGML_RPC=ON -DBUILD_SHARED_LIBS=ON .. && cmake --build . --config Release -j $(sysctl -n hw.logicalcpu)
