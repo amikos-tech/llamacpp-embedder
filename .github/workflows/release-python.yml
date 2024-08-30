@@ -1,7 +1,7 @@
-name: Release
+name: Python Release
 
 on:
-  dispatch:
+  workflow_dispatch:
     inputs:
       create_test_release:
         description: 'Create a Test PyPi release'
