@@ -7,8 +7,8 @@
 #pragma warning(disable: 4244 4267) // possible loss of data
 #endif
 
-static std::vector <std::string> split_lines(const std::string &s, const std::string &separator = "\n") {
-    std::vector <std::string> lines;
+static std::vector<std::string> split_lines(const std::string &s, const std::string &separator = "\n") {
+    std::vector<std::string> lines;
     size_t start = 0;
     size_t end = s.find(separator);
 
@@ -23,7 +23,7 @@ static std::vector <std::string> split_lines(const std::string &s, const std::st
     return lines;
 }
 
-static void batch_add_seq(llama_batch &batch, const std::vector <int32_t> &tokens, llama_seq_id seq_id) {
+static void batch_add_seq(llama_batch &batch, const std::vector<int32_t> &tokens, llama_seq_id seq_id) {
     size_t n_tokens = tokens.size();
     for (size_t i = 0; i < n_tokens; i++) {
         llama_batch_add(batch, tokens[i], i, {seq_id}, true);
@@ -74,22 +74,40 @@ static void batch_decode(llama_context *ctx, llama_batch &batch, float *output, 
         llama_embd_normalize(embd, out, n_embd, embd_norm);
     }
 }
-void my_log_callback(enum ggml_log_level level, const char * text, void * user_data) {
+
+void my_log_callback(enum ggml_log_level level, const char *text, void *user_data) {
     // Do nothing, effectively silencing the log
 }
 
-llama_embedder *init_embedder(char *embedding_model) {
+enum llama_pooling_type from_uint(const uint32_t pooling_type){
+    switch (pooling_type) {
+        case 0:
+            return LLAMA_POOLING_TYPE_NONE;
+        case 1:
+            return LLAMA_POOLING_TYPE_MEAN;
+        case 2:
+            return LLAMA_POOLING_TYPE_CLS;
+        case 3:
+            return LLAMA_POOLING_TYPE_LAST;
+        default:
+            throw std::runtime_error("error: invalid pooling type");
+    }
+}
+
+llama_embedder *init_embedder(const char *embedding_model, const uint32_t pooling_type) {
     gpt_params params;
+
+    log_disable();
 
     params.model = embedding_model;
     params.embedding = true;
     // For non-causal models, batch size must be equal to ubatch size
     params.n_ubatch = params.n_batch;
-    params.pooling_type=LLAMA_POOLING_TYPE_MEAN;
+    params.pooling_type = from_uint(pooling_type);
 
 
     if (params.seed == LLAMA_DEFAULT_SEED) {
-        params.seed = time(NULL);
+        params.seed = time(nullptr);
     }
 
 
@@ -99,23 +117,22 @@ llama_embedder *init_embedder(char *embedding_model) {
     llama_numa_init(params.numa);
 
 
-    llama_log_set(my_log_callback, NULL);
+    llama_log_set(my_log_callback, nullptr);
     // load the model
     llama_init_result llama_init = llama_init_from_gpt_params(params);
 
     llama_model *model = llama_init.model;
     llama_context *ctx = llama_init.context;
-    if (model == NULL) {
+    if (model == nullptr) {
         fprintf(stderr, "%s: error: unable to load model\n", __func__);
-        return nullptr;
+        throw std::runtime_error("error: unable to load model");
     }
 
-    const int n_ctx_train = llama_n_ctx_train(model);
-    const int n_ctx = llama_n_ctx(ctx);
+    const int32_t n_ctx_train = llama_n_ctx_train(model);
+    const uint32_t n_ctx = llama_n_ctx(ctx);
 
     if (llama_model_has_encoder(model) && llama_model_has_decoder(model)) {
-        fprintf(stderr, "%s: error: computing embeddings in encoder-decoder models is not supported\n", __func__);
-        return nullptr;
+        throw std::runtime_error("error: computing embeddings in encoder-decoder models is not supported");
     }
 
     if (n_ctx > n_ctx_train) {
@@ -124,7 +141,7 @@ llama_embedder *init_embedder(char *embedding_model) {
     }
 
 
-    llama_embedder *embedder = new llama_embedder;
+    auto *embedder = new llama_embedder;
     embedder->context = ctx;
     embedder->model = model;
     return embedder;
@@ -143,14 +160,21 @@ void free_embedder(llama_embedder *embedder) {
 }
 
 // Creates embeddings from list of strings
-void embed(llama_embedder *embedder, const std::vector <std::string> prompts, std::vector <std::vector<float>> &output,
+void embed(llama_embedder *embedder, const std::vector<std::string> prompts, std::vector<std::vector<float>> &output,
            int32_t embd_norm) {
-    llama_context *ctx = embedder->context;
-    llama_model *model = embedder->model;
-    if (!embedder || prompts.empty() || !output.empty()) {
-        fprintf(stderr, "Error: Null pointer passed to embed function\n");
+    if (!embedder) {
+        throw std::runtime_error("Error: Null pointer passed to embed function");
+    }
+    if (prompts.empty()){
+        fprintf(stderr, "Warn: empty prompts.\n");
         return;
     }
+    if (!output.empty()){
+        fprintf(stderr, "Warn: output is not empty.\n");
+        return;
+    }
+    llama_context *ctx = embedder->context;
+    llama_model *model = embedder->model;
     const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
 
 
@@ -159,14 +183,14 @@ void embed(llama_embedder *embedder, const std::vector <std::string> prompts, st
     GGML_ASSERT(llama_n_batch(ctx) >= llama_n_ctx(ctx));
 
     // tokenize the prompts and trim
-    std::vector <std::vector<int32_t>> inputs;
+    std::vector<std::vector<int32_t>> inputs;
     for (const auto &prompt: prompts) {
         auto inp = ::llama_tokenize(ctx, prompt, true, false);
         if (inp.size() > n_batch) {
             fprintf(stderr,
                     "%s: error: number of tokens in input line (%lld) exceeds batch size (%lld), increase batch size and re-run\n",
                     __func__, (long long int) inp.size(), (long long int) n_batch);
-//            return 1;
+            throw std::runtime_error("error: number of tokens in input line exceeds batch size");
         }
         inputs.push_back(inp);
     }
@@ -183,7 +207,7 @@ void embed(llama_embedder *embedder, const std::vector <std::string> prompts, st
 
     // initialize batch
     const int n_prompts = prompts.size();
-    struct llama_batch batch = llama_batch_init(n_batch, 0, 1);
+    struct llama_batch batch = llama_batch_init((long long int) n_batch, 0, 1);
 
     // count number of embeddings
     int n_embd_count = 0;
@@ -242,7 +266,6 @@ void embed(llama_embedder *embedder, const std::vector <std::string> prompts, st
             }
         }
     } else {
-        fprintf(stdout,"POOL TYPE: %d \n",pooling_type);
         for (int j = 0; j < n_prompts; j++) {
             for (int i = 0; i < n_embd; i++) {
                 output[j][i] = emb[j * n_embd + i];

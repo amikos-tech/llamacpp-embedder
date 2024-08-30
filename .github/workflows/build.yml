@@ -75,13 +75,13 @@ jobs:
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
           cp LICENSE ./build/bin/
-          zip -r llama-${{ steps.tag.outputs.name }}-bin-macos-arm64.zip ./build/bin/*
+          zip -r llama-${{ steps.tag.outputs.name }}-macos-arm64.zip ./build/libllama-embedder.*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-macos-arm64.zip
+          path: llama-${{ steps.tag.outputs.name }}-macos-arm64.zip
           name: llama-bin-macos-arm64.zip
 
   macOS-latest-cmake-x64:
@@ -134,13 +134,13 @@ jobs:
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
           cp LICENSE ./build/bin/
-          zip -r llama-${{ steps.tag.outputs.name }}-bin-macos-x64.zip ./build/bin/*
+          zip -r llama-${{ steps.tag.outputs.name }}-macos-x64.zip ./build/llama-embedder.*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-macos-x64.zip
+          path: llama-${{ steps.tag.outputs.name }}-macos-x64.zip
           name: llama-bin-macos-x64.zip
 
 
@@ -204,13 +204,13 @@ jobs:
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
           cp LICENSE ./build/bin/
-          zip -r llama-${{ steps.tag.outputs.name }}-bin-ubuntu-x64.zip ./build/bin/*
+          zip -r llama-${{ steps.tag.outputs.name }}-ubuntu-x64.zip ./build/bin/llama-embedder.*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-ubuntu-x64.zip
+          path: llama-${{ steps.tag.outputs.name }}-ubuntu-x64.zip
           name: llama-bin-ubuntu-x64.zip
 
 #  ubuntu-latest-cmake-sanitizer:
@@ -737,14 +737,13 @@ jobs:
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          Copy-Item LICENSE .\build\bin\Release\llama.cpp.txt
-          7z a llama-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}.zip .\build\bin\Release\*
+          7z a llama-${{ steps.tag.outputs.name }}-win-${{ matrix.build }}.zip .\build\libllama-embedder.*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}.zip
+          path: llama-${{ steps.tag.outputs.name }}-win-${{ matrix.build }}.zip
           name: llama-bin-win-${{ matrix.build }}.zip
 
   windows-latest-cmake-cuda:
@@ -797,13 +796,13 @@ jobs:
         id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         run: |
-          7z a llama-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
+          7z a llama-${{ steps.tag.outputs.name }}-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\libllama-embedder.*
 
       - name: Upload artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
+          path: llama-${{ steps.tag.outputs.name }}-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
           name: llama-bin-win-cu${{ matrix.cuda }}-x64.zip
 
       - name: Copy and pack Cuda runtime
