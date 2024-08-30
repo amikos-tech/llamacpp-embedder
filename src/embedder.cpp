@@ -79,7 +79,7 @@ void my_log_callback(enum ggml_log_level level, const char *text, void *user_dat
     // Do nothing, effectively silencing the log
 }
 
-enum llama_pooling_type from_uint(const uint pooling_type){
+enum llama_pooling_type from_uint(const uint32_t pooling_type){
     switch (pooling_type) {
         case 0:
             return LLAMA_POOLING_TYPE_NONE;
@@ -94,7 +94,7 @@ enum llama_pooling_type from_uint(const uint pooling_type){
     }
 }
 
-llama_embedder *init_embedder(const char *embedding_model, const uint pooling_type) {
+llama_embedder *init_embedder(const char *embedding_model, const uint32_t pooling_type) {
     gpt_params params;
 
     log_disable();
