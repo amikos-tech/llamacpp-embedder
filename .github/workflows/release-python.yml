@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2019, macos-latest, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -36,6 +36,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+      - name: Install Ninja
+        if: matrix.os == 'windows-latest'
+        id: install_ninja
+        run: |
+          choco install ninja
       - name: Build wheels
         run: |
           make python-dist
