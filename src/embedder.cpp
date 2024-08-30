@@ -128,8 +128,8 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
         throw std::runtime_error("error: unable to load model");
     }
 
-    const int n_ctx_train = llama_n_ctx_train(model);
-    const uint n_ctx = llama_n_ctx(ctx);
+    const int32_t n_ctx_train = llama_n_ctx_train(model);
+    const uint32_t n_ctx = llama_n_ctx(ctx);
 
     if (llama_model_has_encoder(model) && llama_model_has_decoder(model)) {
         throw std::runtime_error("error: computing embeddings in encoder-decoder models is not supported");
