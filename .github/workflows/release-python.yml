@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  dispatch:
+    inputs:
+      create_test_release:
+        description: 'Create a Test PyPi release'
+        required: false
+        type: boolean
+        default: false
+#  push:
+#    tags:
+#      - '[0-9]+.[0-9]+.[0-9]*'
+jobs:
+
+  build:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.os == 'ubuntu-latest'
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        run: |
+          make python-dist
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: bindings/python/build
+
+  upload:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    - name: Build sdist
+      run: |
+        make dist
+    - name: Download wheels
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish to Test PyPI
+      if: github.event.inputs.create_test_release == true
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+    - name: Publish to PyPI
+      if: github.event.inputs.create_test_release == false
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

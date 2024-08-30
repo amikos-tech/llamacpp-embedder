@@ -27,7 +27,7 @@ struct llama_embedder {
 
 
 extern "C" {
-EXPORT_SYMBOL llama_embedder * init_embedder(char * embedding_model);
+EXPORT_SYMBOL llama_embedder * init_embedder(const char * embedding_model, const uint pooling_type);
 EXPORT_SYMBOL void free_embedder(llama_embedder *embedder);
 EXPORT_SYMBOL void embed(llama_embedder * embedder, const std::vector<std::string> prompts, std::vector<std::vector<float>> &output, int32_t embd_norm);
 }
