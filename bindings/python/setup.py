@@ -21,11 +21,15 @@ def get_lib_name():
         raise OSError(f"Unsupported operating system: {platform.system()}")
 
 
+shared_lib_target = "../../build"
+if platform.system() == "Windows":
+    shared_lib_target = "../../build/Release"
 # Define the path to your shared library relative to the project root
-SHARED_LIB_PATH = os.path.join(os.environ.get("SHARED_LIB_PATH","../../build"), get_lib_name())
+SHARED_LIB_PATH = os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), get_lib_name())
 SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
 LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../vendor/llama.cpp/LICENSE"))
+
 
 class CustomBuildExt(build_ext):
     def run(self):
@@ -71,7 +75,8 @@ class CustomSdist(sdist):
             dest = os.path.join(base_dir, get_lib_name())
             shutil.copy2(SHARED_LIB_PATH, dest)
         else:
-            raise FileNotFoundError(f"Shared library not found at {SHARED_LIB_PATH}, {os.listdir(os.path.dirname(SHARED_LIB_PATH))}")
+            raise FileNotFoundError(
+                f"Shared library not found at {SHARED_LIB_PATH}, {os.listdir(os.path.dirname(SHARED_LIB_PATH))}")
         if os.path.exists(SHARED_LIB_SRC):
             dest_src_path = os.path.join(base_dir, "src")
             shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
@@ -101,7 +106,6 @@ ext_modules = [
 ]
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-
 
 setup(
     name="llama_embedder",
