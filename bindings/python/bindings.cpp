@@ -27,7 +27,7 @@ private:
 public:
     LlamaEmbedder(const std::string& model_path, const PoolingType pooling_type = PoolingType::MEAN) {
 
-        embedder = init_embedder(const_cast<char*>(model_path.c_str()), static_cast<uint>(pooling_type));
+        embedder = init_embedder(const_cast<char*>(model_path.c_str()), static_cast<uint32_t>(pooling_type));
         if (!embedder) {
             throw std::runtime_error("Failed to initialize embedder");
         }
