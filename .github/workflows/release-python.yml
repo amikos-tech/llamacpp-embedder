@@ -41,6 +41,14 @@ jobs:
         id: install_ninja
         run: |
           choco install ninja
+      - name: Set Mac flags
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
+        run: |
+          echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+      - name: Set Windows Env
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
       - name: Build wheels
         run: |
           make python-dist
@@ -62,22 +70,14 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: "3.10"
-    - name: Build sdist
-      run: |
-        make dist
+#    - name: Build sdist
+#      run: |
+#        make dist
     - name: Download wheels
       uses: actions/download-artifact@v3
       with:
         name: python-package-distributions
         path: dist/
-    - name: Set Mac flags
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
-      run: |
-        echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
-    - name: Set Windows Env
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
     - name: Publish to Test PyPI
       if: github.event.inputs.create_test_release == true
       uses: pypa/gh-action-pypi-publish@release/v1
