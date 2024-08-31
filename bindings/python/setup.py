@@ -70,6 +70,8 @@ class CustomSdist(sdist):
         if os.path.exists(SHARED_LIB_PATH):
             dest = os.path.join(base_dir, get_lib_name())
             shutil.copy2(SHARED_LIB_PATH, dest)
+        else:
+            raise FileNotFoundError(f"Shared library not found at {SHARED_LIB_PATH}, {os.listdir(os.path.dirname(SHARED_LIB_PATH))}")
         if os.path.exists(SHARED_LIB_SRC):
             dest_src_path = os.path.join(base_dir, "src")
             shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
