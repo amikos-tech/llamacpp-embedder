@@ -58,7 +58,7 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
-          CIBW_ENVIRONMENT: PROJECT_ROOT=$GITHUB_WORKSPACE
+          CIBW_ENVIRONMENT: PROJECT_ROOT=/home/runner/work/llamacpp-embedder/llamacpp-embedder/
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
