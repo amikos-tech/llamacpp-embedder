@@ -6,7 +6,7 @@ from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 import pybind11
 from setuptools.command.sdist import sdist
-
+from wheel._bdist_wheel import bdist_wheel
 
 SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
@@ -95,10 +95,35 @@ class CustomSdist(sdist):
             shutil.copy2(LLAMA_LICENSE_PATH, os.path.join(base_dir, "vendor/llama.cpp/LICENSE"))
 
 
+class CustomBdistWheel(bdist_wheel):
+    """
+    Here we create the release tree by adding the necessary build deps such as the shared lib and the src or header files
+    """
+
+    def run(self):
+        # Custom behavior before the standard run
+        print("Running custom bdist_wheel command")
+
+        # Call the standard run method
+        super().run()
+
+        # Copy shared library to the base dir of the source distribution
+        dest = os.path.join(self.dist_dir, os.path.basename(SHARED_LIB_PATH))
+        shutil.copy2(SHARED_LIB_PATH, dest)
+        if os.path.exists(SHARED_LIB_SRC):
+            dest_src_path = os.path.join(self.dist_dir, "src")
+            shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
+        if os.path.exists(LICENSE_PATH):
+            shutil.copy2(LICENSE_PATH, self.dist_dir)
+        if os.path.exists(LLAMA_LICENSE_PATH):
+            os.makedirs(os.path.join(self.dist_dir, "vendor/llama.cpp"), exist_ok=True)
+            shutil.copy2(LLAMA_LICENSE_PATH, os.path.join(self.dist_dir, "vendor/llama.cpp/LICENSE"))
+
+
 setup(
     package_data={"llama_embedder": [get_lib_name()]},
     include_package_data=True,
     zip_safe=False,
     ext_modules=ext_modules,
-    cmdclass={"build_ext": CustomBuildExt,"sdist": CustomSdist,},
+    cmdclass={"build_ext": CustomBuildExt,"sdist": CustomSdist,"bdist_wheel": CustomBdistWheel,},
 )
