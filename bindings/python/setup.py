@@ -17,7 +17,7 @@ def get_lib_name():
 class CustomBuildExt(build_ext):
     def run(self):
         # Use environment variable set by cibuildwheel, or fall back to a default
-        shared_lib_path = os.path.join(os.environ.get('SHARED_LIB_PATH', 'build'), get_lib_name())
+        shared_lib_path = os.path.join('build', get_lib_name())
         print(f"Looking for shared library at: {shared_lib_path}")
 
         if not os.path.exists(shared_lib_path):
