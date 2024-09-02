@@ -68,7 +68,7 @@ ext_modules = [
         ],
         # library_dirs=["."],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
-        library_dirs=["."],
+        library_dirs=[".", os.getcwd()],  # Add current working directory
         language="c++",
         extra_link_args=[
             "-L" + os.getcwd(),  # Explicitly specify the directory containing the dylib
@@ -107,22 +107,29 @@ class CustomBdistWheel(bdist_wheel):
 
     def run(self):
         print("doing CustomBdistWheel")
-
-        # Custom behavior before the standard run
-        print("Running custom bdist_wheel command")
-
-        print("doing CustomBdistWheel")
         base = "."
-        print(f"Project root dir: {os.path.abspath(base)}: {os.listdir(base)}")
+        print(f"CustomBdistWheel: Project root dir: {os.path.abspath(base)}: {os.listdir(base)}")
         _shared_lib = os.path.join(base, get_lib_name())
 
         if not os.path.exists(_shared_lib):
             raise FileNotFoundError(f"Shared library not found at {_shared_lib}")
 
+        # Create the llama_embedder directory in the wheel
         wheel_dir = self.dist_dir
-        dest = os.path.join(wheel_dir, 'llama_embedder', os.path.basename(_shared_lib))
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        package_dir = os.path.join(wheel_dir, 'llama_embedder')
+        os.makedirs(package_dir, exist_ok=True)
+
+        # Copy the shared library to the package directory
+        dest = os.path.join(package_dir, os.path.basename(_shared_lib))
         shutil.copy2(_shared_lib, dest)
+        print(f"CustomBdistWheel: Copied shared library to {dest}")
+
+        # Call the standard run method
+
+        # Print the contents of the wheel directory after running
+        print(f"CustomBdistWheel: Contents of wheel directory: {os.listdir(wheel_dir)}")
+        print(f"CustomBdistWheel: Contents of package directory: {os.listdir(package_dir)}")
+
         _src_path = os.path.join(base, "src")
         _license_path = os.path.join(base, "LICENSE.md")
         _llama_license_path = os.path.join(base, "vendor/llama.cpp/LICENSE")
