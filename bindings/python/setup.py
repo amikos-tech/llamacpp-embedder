@@ -122,7 +122,8 @@ class CustomBdistWheel(bdist_wheel):
         _src_path = os.path.join(base, "src")
         _license_path = os.path.join(base, "LICENSE.md")
         _llama_license_path = os.path.join(base, "vendor/llama.cpp/LICENSE")
-        dest = os.path.join(self.get_wheel_dir(), os.path.basename(_shared_lib))
+        wheel_dir = os.path.join(self.dist_dir, *self.get_tag())
+        dest = os.path.join(wheel_dir, os.path.basename(_shared_lib))
         shutil.copy2(_shared_lib, dest)
         if os.path.exists(_src_path):
             dest_src_path = os.path.join(self.dist_dir, "src")
