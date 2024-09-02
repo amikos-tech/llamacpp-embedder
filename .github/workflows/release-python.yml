@@ -7,7 +7,7 @@ on:
         description: 'Create a Test PyPi release'
         required: false
         type: boolean
-        default: false
+        default: true
 #  push:
 #    tags:
 #      - '[0-9]+.[0-9]+.[0-9]*'
