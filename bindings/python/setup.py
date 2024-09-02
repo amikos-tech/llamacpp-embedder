@@ -71,6 +71,7 @@ ext_modules = [
         ],
         # library_dirs=["."],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
+        library_dirs=["."],
         language="c++",
         extra_link_args=[
             "-L" + os.getcwd(),  # Explicitly specify the directory containing the dylib
