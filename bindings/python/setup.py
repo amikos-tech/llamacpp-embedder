@@ -28,6 +28,7 @@ SHARED_LIB_PATH = os.path.join('../../build', get_lib_name())
 
 class CustomBuildExt(build_ext):
     def run(self):
+        print("doing CustomBuildExt")
         # Use environment variable set by cibuildwheel, or fall back to a default
         shared_lib_path = os.path.join(get_lib_name())
         print(f"{os.listdir(self.build_lib)}", f"{os.path.abspath(self.build_lib)}")
@@ -36,13 +37,14 @@ class CustomBuildExt(build_ext):
         if not os.path.exists(shared_lib_path):
             raise FileNotFoundError(f"Shared library not found at {shared_lib_path}")
 
-        dest_path = os.path.join(self.build_lib, "llama_embedder")
+        dest_path = os.path.join(self.build_lib)
         os.makedirs(dest_path, exist_ok=True)
-        self.copy_file(shared_lib_path, os.path.join(dest_path, os.path.basename(shared_lib_path)))
+        self.copy_file(shared_lib_path, os.path.join(self.build_lib, os.path.basename(shared_lib_path)))
 
         build_ext.run(self)
 
     def build_extensions(self):
+        print("doing build_extensions")
         # Determine the compiler and set appropriate flags
         ct = self.compiler.compiler_type
         opts = []
@@ -67,10 +69,14 @@ ext_modules = [
             ".",
             "src",  # Adjust this path to point to your C++ headers
         ],
-        library_dirs=["."],  # Adjust this path to point to your built libraries
+        # library_dirs=["."],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
         language="c++",
-        extra_link_args=["-Wl,-rpath,@loader_path/"],
+        extra_link_args=[
+            "-L" + os.getcwd(),  # Explicitly specify the directory containing the dylib
+            "-lllama-embedder",  # Ensure the correct library is linked
+            "-Wl,-rpath,@loader_path/"  # Set rpath to the directory containing the .so and .dylib
+        ],
     ),
 ]
 
@@ -81,6 +87,7 @@ class CustomSdist(sdist):
     """
 
     def make_release_tree(self, base_dir, files):
+        print("doing make_release_tree")
         sdist.make_release_tree(self, base_dir, files)
         # Copy shared library to the base dir of the source distribution
         dest = os.path.join(base_dir, os.path.basename(SHARED_LIB_PATH))
@@ -101,13 +108,15 @@ class CustomBdistWheel(bdist_wheel):
     """
 
     def run(self):
+        print("doing CustomBdistWheel")
+
         # Custom behavior before the standard run
         print("Running custom bdist_wheel command")
 
 
 
         # Copy shared library to the base dir of the source distribution
-        base = "/project"
+        base = "."
         print(f"Project root dir: {os.path.abspath(base)}: {os.listdir(base)}")
         _shared_lib=os.path.join(base, get_lib_name())
         _src_path = os.path.join(base, "src")
