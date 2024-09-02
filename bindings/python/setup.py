@@ -30,7 +30,7 @@ class CustomBuildExt(build_ext):
     def run(self):
         # Use environment variable set by cibuildwheel, or fall back to a default
         shared_lib_path = os.path.join(get_lib_name())
-        # print(f"{os.listdir(os.path.join(self.build_lib,'llama_embedder'))}", f"{os.path.abspath(self.build_lib)}")
+        print(f"{os.listdir(self.build_lib)}", f"{os.path.abspath(self.build_lib)}")
         print(f"Looking for shared library at: {shared_lib_path}")
 
         if not os.path.exists(shared_lib_path):
