@@ -6,10 +6,10 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
-python-cidist: lib
+python-cidist:
 	rm -rf bindings/python/dist/*
 	cd bindings/python && pip install cibuildwheel==2.19.1
-	cp -r build/libllama-embedder.so bindings/python/libllama-embedder.so
+	ln -s ../../ bindings/python/proj
 	cd bindings/python && python -m cibuildwheel --output-dir dist
 
 python-test: python-dist
