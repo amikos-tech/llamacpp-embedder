@@ -107,17 +107,22 @@ class CustomBdistWheel(bdist_wheel):
 
 
         # Copy shared library to the base dir of the source distribution
-        print(f"Current dir: {os.path.abspath(self.dist_dir)}")
-        dest = os.path.join(self.dist_dir, os.path.basename(SHARED_LIB_PATH))
-        shutil.copy2(SHARED_LIB_PATH, dest)
-        if os.path.exists(SHARED_LIB_SRC):
+        base = os.getenv("PROJECT_ROOT")
+        print(f"Project root dir: {os.path.abspath(base)}")
+        _shared_lib=os.path.join(base, get_lib_name())
+        _src_path = os.path.join(base, "src")
+        _license_path = os.path.join(base, "LICENSE.md")
+        _llama_license_path = os.path.join(base, "vendor/llama.cpp/LICENSE")
+        dest = os.path.join(self.dist_dir, os.path.basename(_shared_lib))
+        shutil.copy2(_shared_lib, dest)
+        if os.path.exists(_src_path):
             dest_src_path = os.path.join(self.dist_dir, "src")
-            shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
-        if os.path.exists(LICENSE_PATH):
-            shutil.copy2(LICENSE_PATH, self.dist_dir)
-        if os.path.exists(LLAMA_LICENSE_PATH):
+            shutil.copytree(_src_path, dest_src_path, dirs_exist_ok=True)
+        if os.path.exists(_license_path):
+            shutil.copy2(_license_path, self.dist_dir)
+        if os.path.exists(_llama_license_path):
             os.makedirs(os.path.join(self.dist_dir, "vendor/llama.cpp"), exist_ok=True)
-            shutil.copy2(LLAMA_LICENSE_PATH, os.path.join(self.dist_dir, "vendor/llama.cpp/LICENSE"))
+            shutil.copy2(_llama_license_path, os.path.join(self.dist_dir, "vendor/llama.cpp/LICENSE"))
         # Call the standard run method
         super().run()
 
