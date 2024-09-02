@@ -2,11 +2,13 @@ import os
 import platform
 import shutil
 
-from setuptools import Extension, setup
+from setuptools import Extension, setup, glob
 from setuptools.command.build_ext import build_ext
 import pybind11
 from setuptools.command.sdist import sdist
 from wheel._bdist_wheel import bdist_wheel
+from auditwheel.repair import repair_wheel
+
 
 SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
@@ -143,6 +145,17 @@ class CustomBdistWheel(bdist_wheel):
             shutil.copy2(_llama_license_path, os.path.join(self.dist_dir, "vendor/llama.cpp/LICENSE"))
         # Call the standard run method
         super().run()
+        wheel_path = os.path.join(self.dist_dir, self.distribution.get_name() + '-*.whl')
+        wheel_file = glob.glob(wheel_path)[0]
+
+        # Repair the wheel
+        repaired_wheel = repair_wheel(wheel_file, abi=None, lib_sdir='.', out_dir=self.dist_dir, update_tags=True)
+
+        # If repair_wheel returns None, it means no repair was needed
+        if repaired_wheel is None:
+            print("No repair needed for the wheel.")
+        else:
+            print(f"Repaired wheel: {repaired_wheel}")
 
 
 setup(
