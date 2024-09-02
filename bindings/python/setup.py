@@ -107,7 +107,7 @@ class CustomBdistWheel(bdist_wheel):
 
 
         # Copy shared library to the base dir of the source distribution
-        base = os.getenv("PROJECT_ROOT")
+        base = "/project"
         print(f"Project root dir: {os.path.abspath(base)}: {os.listdir(base)}")
         _shared_lib=os.path.join(base,"build", get_lib_name())
         _src_path = os.path.join(base, "src")
