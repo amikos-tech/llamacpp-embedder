@@ -9,7 +9,7 @@ python-dist: lib
 python-cidist:
 	rm -rf bindings/python/dist/*
 	cd bindings/python && pip install cibuildwheel==2.19.1
-	ln -s ../../ bindings/python/proj
+	mkdir -p bindings/python/proj && rsync -av --exclude='bindings' ../../ bindings/python/proj
 	cd bindings/python && python -m cibuildwheel --output-dir dist
 
 python-test: python-dist
