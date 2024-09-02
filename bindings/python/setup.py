@@ -149,7 +149,7 @@ class CustomBdistWheel(bdist_wheel):
         wheel_file = glob.glob(wheel_path)[0]
 
         # Repair the wheel
-        repaired_wheel = repair_wheel(wheel_file, abi=None, lib_sdir='.', out_dir=self.dist_dir, update_tags=True)
+        repaired_wheel = repair_wheel(wheel_path=wheel_file, abis=None, lib_sdir='.', out_dir=self.dist_dir, update_tags=True)
 
         # If repair_wheel returns None, it means no repair was needed
         if repaired_wheel is None:
