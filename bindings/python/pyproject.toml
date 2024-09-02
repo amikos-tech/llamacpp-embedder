@@ -28,5 +28,5 @@ classifiers = [
 packages = ["llama_embedder"]
 
 [tool.cibuildwheel]
-before-build = ["cd proj && make lib && cp build/libllama_embedder.so ../"]
+before-build = ["cd proj && ls -latrh && make lib && cp build/libllama_embedder.so ../"]
 environment = { PROJECT_ROOT = "{project}" }
