@@ -2,14 +2,11 @@ pypi: python-dist
 	twine upload dist/*
 .PHONY: python-dist
 python-dist: lib
-	cp -r build/ bindings/python/build/
 	cd bindings/python && rm -rf dist/*
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
 python-cidist: lib
-	mkdir -p bindings/python/build/ && cp build/libllama-embedder.so bindings/python/build/libllama-embedder.so
-	mkdir -p bindings/python/src/ && cp -r src/ bindings/python/src/
 	rm -rf bindings/python/dist/*
 	cd bindings/python && pip install cibuildwheel
 	cd bindings/python && python -m cibuildwheel --output-dir dist

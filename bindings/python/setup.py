@@ -1,8 +1,17 @@
 import os
 import platform
+import shutil
+
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 import pybind11
+from setuptools.command.sdist import sdist
+
+
+SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
+LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
+LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../vendor/llama.cpp/LICENSE"))
+
 
 def get_lib_name():
     if platform.system() == "Darwin":
@@ -15,10 +24,13 @@ def get_lib_name():
     else:
         raise OSError(f"Unsupported operating system: {platform.system()}")
 
+SHARED_LIB_PATH = os.path.join('../../build', get_lib_name())
+
 class CustomBuildExt(build_ext):
     def run(self):
         # Use environment variable set by cibuildwheel, or fall back to a default
-        shared_lib_path = os.path.join('build', get_lib_name())
+        shared_lib_path = os.path.join(get_lib_name())
+        # print(f"{os.listdir(os.path.join(self.build_lib,'llama_embedder'))}", f"{os.path.abspath(self.build_lib)}")
         print(f"Looking for shared library at: {shared_lib_path}")
 
         if not os.path.exists(shared_lib_path):
@@ -55,14 +67,38 @@ ext_modules = [
             ".",
             "src",  # Adjust this path to point to your C++ headers
         ],
-        library_dirs=["build"],  # Adjust this path to point to your built libraries
+        library_dirs=["."],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
         language="c++",
         extra_link_args=["-Wl,-rpath,@loader_path/"],
     ),
 ]
 
+
+class CustomSdist(sdist):
+    """
+    Here we create the release tree by adding the necessary build deps such as the shared lib and the src or header files
+    """
+
+    def make_release_tree(self, base_dir, files):
+        sdist.make_release_tree(self, base_dir, files)
+        # Copy shared library to the base dir of the source distribution
+        dest = os.path.join(base_dir, os.path.basename(SHARED_LIB_PATH))
+        shutil.copy2(SHARED_LIB_PATH, dest)
+        if os.path.exists(SHARED_LIB_SRC):
+            dest_src_path = os.path.join(base_dir, "src")
+            shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
+        if os.path.exists(LICENSE_PATH):
+            shutil.copy2(LICENSE_PATH, base_dir)
+        if os.path.exists(LLAMA_LICENSE_PATH):
+            os.makedirs(os.path.join(base_dir, "vendor/llama.cpp"), exist_ok=True)
+            shutil.copy2(LLAMA_LICENSE_PATH, os.path.join(base_dir, "vendor/llama.cpp/LICENSE"))
+
+
 setup(
+    package_data={"llama_embedder": [get_lib_name()]},
+    include_package_data=True,
+    zip_safe=False,
     ext_modules=ext_modules,
-    cmdclass={"build_ext": CustomBuildExt},
+    cmdclass={"build_ext": CustomBuildExt,"sdist": CustomSdist,},
 )
