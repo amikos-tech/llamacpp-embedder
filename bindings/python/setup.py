@@ -2,6 +2,7 @@ import os
 import platform
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+import pybind11
 
 def get_lib_name():
     if platform.system() == "Darwin":
@@ -50,8 +51,8 @@ ext_modules = [
         "llama_embedder",
         ["bindings.cpp"],
         include_dirs=[
+            pybind11.get_include(),
             ".",
-            "../../src",  # Adjust this path to point to your C++ headers
         ],
         library_dirs=["build"],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
