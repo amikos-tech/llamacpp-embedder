@@ -29,5 +29,5 @@ packages = ["llama_embedder"]
 
 [tool.cibuildwheel]
 #before-build = "cd ../.. && make lib &&"
-before-build = "pip  'setuptools>=45' 'wheel' 'pybind11>=2.6.0' && install python setup.py sdist"
+before-build = "pip install 'setuptools>=45' 'wheel' 'pybind11>=2.6.0' && install python setup.py sdist"
 environment = { SHARED_LIB_PATH = "{project}/build" }
