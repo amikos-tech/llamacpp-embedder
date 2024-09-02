@@ -53,6 +53,7 @@ ext_modules = [
         include_dirs=[
             pybind11.get_include(),
             ".",
+            "../../src",  # Adjust this path to point to your C++ headers
         ],
         library_dirs=["build"],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
