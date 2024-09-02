@@ -1,3 +1,6 @@
 include src/*.h
 include LICENSE.md
 include vendor/llama.cpp/LICENSE
+include *.so
+include *.dylib
+include *.dll
