@@ -6,7 +6,7 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
-python-cidist:
+python-cidist: lib
 	cd bindings/python && rm -rf dist/*
 	cd bindings/python && pip install cibuildwheel
 	cd bindings/python && python -m cibuildwheel --output-dir dist
