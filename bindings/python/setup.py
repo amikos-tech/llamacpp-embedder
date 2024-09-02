@@ -38,8 +38,8 @@ LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..
 class CustomBuildExt(build_ext):
     def run(self):
         # Ensure the shared library exists in the current directory
-        if isinstance(SHARED_LIB_PATHS, List):
-            for SHARED_LIB_PATH in SHARED_LIB_PATHS:
+        if isinstance(get_lib_name(), List):
+            for SHARED_LIB_PATH in get_lib_name():
                 if not os.path.exists(SHARED_LIB_PATH):
                     raise FileNotFoundError(f"Shared library not found at {SHARED_LIB_PATH}")
         elif not os.path.exists(get_lib_name()):
@@ -49,8 +49,8 @@ class CustomBuildExt(build_ext):
         dest_path = os.path.join(self.build_lib, "llama_embedder")
 
         os.makedirs(dest_path, exist_ok=True)
-        if isinstance(SHARED_LIB_PATHS, List):
-            for SHARED_LIB_PATH in SHARED_LIB_PATHS:
+        if isinstance(get_lib_name(), List):
+            for SHARED_LIB_PATH in get_lib_name():
                 shutil.copy2(SHARED_LIB_PATH, dest_path)
         else:
             shutil.copy2(get_lib_name(), dest_path)
