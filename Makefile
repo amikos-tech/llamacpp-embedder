@@ -9,6 +9,7 @@ python-dist: lib
 
 python-cidist: lib
 	mkdir -p bindings/python/build/ && cp build/libllama-embedder.so bindings/python/build/libllama-embedder.so
+	mkdir -p bindings/python/src/ && cp -r src/ bindings/python/src/
 	rm -rf bindings/python/dist/*
 	cd bindings/python && pip install cibuildwheel
 	cd bindings/python && python -m cibuildwheel --output-dir dist
