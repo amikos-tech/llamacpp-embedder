@@ -28,5 +28,5 @@ classifiers = [
 packages = ["llama_embedder"]
 
 [tool.cibuildwheel]
-before-build = "cd ../.. && make lib"
-environment = { SHARED_LIB_PATH = "{project}/../../build" }
+#before-build = "cd ../.. && make lib &&"
+environment = { SHARED_LIB_PATH = "{project}/build" }
