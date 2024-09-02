@@ -107,6 +107,7 @@ class CustomBdistWheel(bdist_wheel):
 
 
         # Copy shared library to the base dir of the source distribution
+        print(f"Current dir: {os.path.abspath(self.dist_dir)}")
         dest = os.path.join(self.dist_dir, os.path.basename(SHARED_LIB_PATH))
         shutil.copy2(SHARED_LIB_PATH, dest)
         if os.path.exists(SHARED_LIB_SRC):
