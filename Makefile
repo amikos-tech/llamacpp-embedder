@@ -9,6 +9,7 @@ python-dist: lib
 python-cidist: lib
 	rm -rf bindings/python/dist/*
 	cd bindings/python && pip install cibuildwheel
+	ln -s ../../build bindings/python/build
 	cd bindings/python && python -m cibuildwheel --output-dir dist
 
 python-test: python-dist
