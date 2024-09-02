@@ -51,7 +51,13 @@ jobs:
           echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
       - name: Build wheels
         run: |
-          make python-dist
+          make python-cidist
+        env:
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
+          CIBW_SKIP: "pp* *musllinux*"
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:

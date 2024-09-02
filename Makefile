@@ -6,6 +6,11 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
+python-cidist:
+	cd bindings/python && rm -rf dist/*
+	cd bindings/python && pip install cibuildwheel
+	python -m cibuildwheel --output-dir dist
+
 python-test: python-dist
 	cd bindings/python && pip install pytest
 	cd bindings/python && pip install --force-reinstall dist/*.whl
