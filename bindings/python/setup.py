@@ -104,8 +104,7 @@ class CustomBdistWheel(bdist_wheel):
         # Custom behavior before the standard run
         print("Running custom bdist_wheel command")
 
-        # Call the standard run method
-        super().run()
+
 
         # Copy shared library to the base dir of the source distribution
         dest = os.path.join(self.dist_dir, os.path.basename(SHARED_LIB_PATH))
@@ -118,6 +117,8 @@ class CustomBdistWheel(bdist_wheel):
         if os.path.exists(LLAMA_LICENSE_PATH):
             os.makedirs(os.path.join(self.dist_dir, "vendor/llama.cpp"), exist_ok=True)
             shutil.copy2(LLAMA_LICENSE_PATH, os.path.join(self.dist_dir, "vendor/llama.cpp/LICENSE"))
+        # Call the standard run method
+        super().run()
 
 
 setup(
