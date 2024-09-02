@@ -8,14 +8,14 @@ python-dist: lib
 	cd bindings/python && python3 -m build
 
 python-cidist: lib
-		ifeq ($(OS),Windows_NT)
-			cp -r build/Release bindings/python/build/
-		else
-			cp -r build/ bindings/python/build/
-		endif
-    	cd bindings/python && rm -rf dist/*
-    	cd bindings/python && pip install build
-    	cd bindings/python && python3 -m build
+	ifeq ($(OS),Windows_NT)
+		cp -r build/Release bindings/python/build/
+	else
+		cp -r build/ bindings/python/build/
+	endif
+	cd bindings/python && rm -rf dist/*
+	cd bindings/python && pip install build
+	cd bindings/python && python3 -m build
 
 python-test: python-dist
 	cd bindings/python && pip install pytest
