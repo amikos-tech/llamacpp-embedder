@@ -24,22 +24,19 @@ def get_lib_name():
     else:
         raise OSError(f"Unsupported operating system: {platform.system()}")
 
-SHARED_LIB_PATH = os.path.join('../../build', get_lib_name())
 
 class CustomBuildExt(build_ext):
     def run(self):
         print("doing CustomBuildExt")
-        # Use environment variable set by cibuildwheel, or fall back to a default
-        shared_lib_path = os.path.join(get_lib_name())
-        print(f"{os.listdir(self.build_lib)}", f"{os.path.abspath(self.build_lib)}")
+        shared_lib_path = os.path.join('.', get_lib_name())
         print(f"Looking for shared library at: {shared_lib_path}")
 
         if not os.path.exists(shared_lib_path):
             raise FileNotFoundError(f"Shared library not found at {shared_lib_path}")
 
-        dest_path = os.path.join(self.build_lib)
+        dest_path = os.path.join(self.build_lib, 'llama_embedder')
         os.makedirs(dest_path, exist_ok=True)
-        self.copy_file(shared_lib_path, os.path.join(self.build_lib, os.path.basename(shared_lib_path)))
+        self.copy_file(shared_lib_path, os.path.join(dest_path, os.path.basename(shared_lib_path)))
 
         build_ext.run(self)
 
@@ -91,8 +88,8 @@ class CustomSdist(sdist):
         print("doing make_release_tree")
         sdist.make_release_tree(self, base_dir, files)
         # Copy shared library to the base dir of the source distribution
-        dest = os.path.join(base_dir, os.path.basename(SHARED_LIB_PATH))
-        shutil.copy2(SHARED_LIB_PATH, dest)
+        dest = os.path.join(base_dir, get_lib_name())
+        shutil.copy2(get_lib_name(), dest)
         if os.path.exists(SHARED_LIB_SRC):
             dest_src_path = os.path.join(base_dir, "src")
             shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
@@ -114,18 +111,21 @@ class CustomBdistWheel(bdist_wheel):
         # Custom behavior before the standard run
         print("Running custom bdist_wheel command")
 
-
-
-        # Copy shared library to the base dir of the source distribution
+        print("doing CustomBdistWheel")
         base = "."
         print(f"Project root dir: {os.path.abspath(base)}: {os.listdir(base)}")
-        _shared_lib=os.path.join(base, get_lib_name())
+        _shared_lib = os.path.join(base, get_lib_name())
+
+        if not os.path.exists(_shared_lib):
+            raise FileNotFoundError(f"Shared library not found at {_shared_lib}")
+
+        wheel_dir = self.dist_dir
+        dest = os.path.join(wheel_dir, 'llama_embedder', os.path.basename(_shared_lib))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy2(_shared_lib, dest)
         _src_path = os.path.join(base, "src")
         _license_path = os.path.join(base, "LICENSE.md")
         _llama_license_path = os.path.join(base, "vendor/llama.cpp/LICENSE")
-        wheel_dir = os.path.join(self.dist_dir, *self.get_tag())
-        dest = os.path.join(wheel_dir, os.path.basename(_shared_lib))
-        shutil.copy2(_shared_lib, self.dist_dir)
         if os.path.exists(_src_path):
             dest_src_path = os.path.join(self.dist_dir, "src")
             shutil.copytree(_src_path, dest_src_path, dirs_exist_ok=True)
