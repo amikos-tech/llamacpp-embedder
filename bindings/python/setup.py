@@ -26,10 +26,10 @@ shared_lib_target = "../../build"
 if platform.system() == "Windows":
     shared_lib_target = "../../build/Release"
 # Define the path to your shared library relative to the project root
-if isinstance(get_lib_name(),str):
-    SHARED_LIB_PATHS = os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), get_lib_name())
-else:
+if isinstance(get_lib_name(),List):
     SHARED_LIB_PATHS = [os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), lib) for lib in get_lib_name()]
+else:
+    SHARED_LIB_PATHS = os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), get_lib_name())
 SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
 LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../vendor/llama.cpp/LICENSE"))
@@ -38,14 +38,22 @@ LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..
 class CustomBuildExt(build_ext):
     def run(self):
         # Ensure the shared library exists in the current directory
-        if not os.path.exists(get_lib_name()):
+        if isinstance(SHARED_LIB_PATHS, List):
+            for SHARED_LIB_PATH in SHARED_LIB_PATHS:
+                if not os.path.exists(SHARED_LIB_PATH):
+                    raise FileNotFoundError(f"Shared library not found at {SHARED_LIB_PATH}")
+        elif not os.path.exists(get_lib_name()):
             raise FileNotFoundError(f"Shared library not found at {get_lib_name()}")
 
         # Copy the shared library to the build directory
         dest_path = os.path.join(self.build_lib, "llama_embedder")
 
         os.makedirs(dest_path, exist_ok=True)
-        shutil.copy2(get_lib_name(), dest_path)
+        if isinstance(SHARED_LIB_PATHS, List):
+            for SHARED_LIB_PATH in SHARED_LIB_PATHS:
+                shutil.copy2(SHARED_LIB_PATH, dest_path)
+        else:
+            shutil.copy2(get_lib_name(), dest_path)
 
         # Run the original build_ext command
         build_ext.run(self)
