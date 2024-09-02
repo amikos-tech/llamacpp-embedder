@@ -1,9 +1,32 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel",
-    "numpy>=1.10.0",
-    "pybind11>=2.0",
+requires = ["setuptools>=45", "wheel", "pybind11>=2.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llama_embedder"
+version = "0.0.1"
+description = "LLama.cpp embedder library python bindings"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "../../LICENSE.md"}
+authors = [
+    {name = "Trayan Azarov", email = "trayan.azarov@amikos.tech"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
-build-backend = "setuptools.build_meta"
+[tool.setuptools]
+packages = ["llama_embedder"]
+
+[tool.cibuildwheel]
+before-build = "cd ../.. && cmake -S . -B build && cmake --build build"
+environment = { SHARED_LIB_PATH = "{project}/../../build" }
