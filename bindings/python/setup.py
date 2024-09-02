@@ -109,7 +109,7 @@ class CustomBdistWheel(bdist_wheel):
         # Copy shared library to the base dir of the source distribution
         base = os.getenv("PROJECT_ROOT")
         print(f"Project root dir: {os.path.abspath(base)}")
-        _shared_lib=os.path.join(base, get_lib_name())
+        _shared_lib=os.path.join(base,"build", get_lib_name())
         _src_path = os.path.join(base, "src")
         _license_path = os.path.join(base, "LICENSE.md")
         _llama_license_path = os.path.join(base, "vendor/llama.cpp/LICENSE")
