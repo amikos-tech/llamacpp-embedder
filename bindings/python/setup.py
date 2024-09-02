@@ -147,7 +147,7 @@ setup(
         "build_ext": CustomBuildExt,
         "sdist": CustomSdist,
     },
-    package_data={"llama_embedder": [get_lib_name()]},
+    package_data={"llama_embedder": [get_lib_name()] if isinstance(get_lib_name(),str) else get_lib_name()},
     include_package_data=True,
     zip_safe=False,
 )
