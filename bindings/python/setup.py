@@ -1,6 +1,7 @@
 import os
 import platform
 import shutil
+from typing import List
 
 import pybind11
 from setuptools import Extension, setup, find_packages
@@ -16,7 +17,7 @@ def get_lib_name():
     elif platform.system() == "Linux":
         return "libllama-embedder.so"
     elif platform.system() == "Windows":
-        return "llama-embedder.dll"
+        return ["llama-embedder.dll","llama-embedder.lib"]
     else:
         raise OSError(f"Unsupported operating system: {platform.system()}")
 
@@ -25,7 +26,10 @@ shared_lib_target = "../../build"
 if platform.system() == "Windows":
     shared_lib_target = "../../build/Release"
 # Define the path to your shared library relative to the project root
-SHARED_LIB_PATH = os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), get_lib_name())
+if isinstance(get_lib_name(),str):
+    SHARED_LIB_PATHS = os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), get_lib_name())
+else:
+    SHARED_LIB_PATHS = [os.path.join(os.environ.get("SHARED_LIB_PATH", shared_lib_target), lib) for lib in get_lib_name()]
 SHARED_LIB_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src"))
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../LICENSE.md"))
 LLAMA_LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../vendor/llama.cpp/LICENSE"))
@@ -71,12 +75,14 @@ class CustomSdist(sdist):
     def make_release_tree(self, base_dir, files):
         sdist.make_release_tree(self, base_dir, files)
         # Copy shared library to the base dir of the source distribution
-        if os.path.exists(SHARED_LIB_PATH):
-            dest = os.path.join(base_dir, get_lib_name())
-            shutil.copy2(SHARED_LIB_PATH, dest)
-        else:
-            raise FileNotFoundError(
-                f"Shared library not found at {SHARED_LIB_PATH}, {os.listdir(os.path.dirname(SHARED_LIB_PATH))}")
+        if isinstance(SHARED_LIB_PATHS, List):
+            for SHARED_LIB_PATH in SHARED_LIB_PATHS:
+                if os.path.exists(SHARED_LIB_PATH):
+                    dest = os.path.join(base_dir, os.path.basename(SHARED_LIB_PATH))
+                    shutil.copy2(SHARED_LIB_PATH, dest)
+                else:
+                    raise FileNotFoundError(
+                        f"Shared library not found at {SHARED_LIB_PATH}, {os.listdir(os.path.dirname(SHARED_LIB_PATH))}")
         if os.path.exists(SHARED_LIB_SRC):
             dest_src_path = os.path.join(base_dir, "src")
             shutil.copytree(SHARED_LIB_SRC, dest_src_path, dirs_exist_ok=True)
