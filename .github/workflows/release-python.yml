@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest] #, windows-latest, macos-latest, macos-14
+        os: [macos-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -53,7 +53,7 @@ jobs:
         run: |
           make python-cidist
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8,<3.9"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64"

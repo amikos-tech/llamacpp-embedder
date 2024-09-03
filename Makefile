@@ -6,14 +6,22 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
+python-cidist-local:
+	rm -rf dist/*
+	rm -rf build/lib.*
+	rm -rf build/temp.*
+	pip install cibuildwheel==2.19.1 auditwheel
+	CIBW_BEFORE_BUILD="make lib" \
+	CIBW_SKIP="pp* *musllinux*" \
+	CIBW_ARCHS_MACOS="x86_64" \
+	CIBW_PROJECT_REQUIRES_PYTHON=">=3.8,<3.9" \
+	CI=1 \
+	python -m cibuildwheel --output-dir dist
+
 python-cidist:
 	rm -rf dist/*
-	pip install cibuildwheel auditwheel
-	export CIBW_BEFORE_BUILD="make lib"
-	export CIBW_SKIP="pp* *musllinux*"
-	export CIBW_TEST_REQUIRES="pytest>=6.0.0 huggingface_hub"
-	export CIBW_TEST_COMMAND="python -m pytest {project}/bindings/python/tests/test"
-	export CI=1
+	rm -rf build/
+	pip install cibuildwheel==2.19.1 auditwheel
 	python -m cibuildwheel --output-dir dist
 
 python-test: python-dist

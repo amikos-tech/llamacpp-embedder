@@ -37,11 +37,12 @@ class CustomBuildExt(build_ext):
         os.makedirs(dest_path, exist_ok=True)
         self.copy_file(shared_lib_path, os.path.join(dest_path, os.path.basename(shared_lib_path)))
 
-        # extension_path = self.get_ext_fullpath('llama_embedder')
-        # cmd = ['install_name_tool', '-change', f'@rpath/{get_lib_name()}', f'@loader_path/{shared_lib_path}', extension_path]
-        # subprocess.check_call(cmd)
+
 
         build_ext.run(self)
+        extension_path = self.get_ext_fullpath('llama_embedder')
+        cmd = ['install_name_tool', '-change', f'@rpath/{get_lib_name()}', f'@loader_path/{shared_lib_path}', extension_path]
+        subprocess.check_call(cmd)
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
@@ -85,7 +86,7 @@ ext_modules = [
         ],
         # library_dirs=["."],  # Adjust this path to point to your built libraries
         libraries=["llama-embedder"],
-        library_dirs=["build", os.getcwd()],  # Add current working directory
+        library_dirs=[os.getcwd()],  # Add current working directory
         language="c++",
         extra_link_args=extra_link_args,
     ),
@@ -139,7 +140,7 @@ class CustomBdistWheel(bdist_wheel):
 
 
 setup(
-    package_data={"llama_embedder": [f"build/{get_lib_name()}"]},
+    package_data={"llama_embedder": [f"{get_lib_name()}"]},
     include_package_data=True,
     zip_safe=False,
     ext_modules=ext_modules,
