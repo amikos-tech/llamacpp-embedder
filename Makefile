@@ -6,7 +6,7 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
-python-cidist: lib
+python-cidist:
 	rm -rf bindings/python/dist/*
 	pip install cibuildwheel==2.19.1 auditwheel
 	export CIBW_SKIP="pp* *musllinux*"

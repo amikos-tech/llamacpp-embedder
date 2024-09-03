@@ -28,4 +28,5 @@ classifiers = [
 packages = ["bindings.python.llama_embedder"]
 
 [tool.cibuildwheel]
+before-build = ["make lib"]
 environment = { PROJECT_ROOT = "{project}" }
