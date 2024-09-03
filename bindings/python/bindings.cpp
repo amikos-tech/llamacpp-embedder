@@ -1,6 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "src/embedder.h"
+#include "../../src/embedder.h"
 
 namespace py = pybind11;
 

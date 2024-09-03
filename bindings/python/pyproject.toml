@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "LLama.cpp embedder library python bindings"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = {file="LICENSE.md"}
 authors = [
     {name = "Trayan Azarov", email = "trayan.azarov@amikos.tech"},
 ]
@@ -25,8 +25,7 @@ classifiers = [
 ]
 
 [tool.setuptools]
-packages = ["llama_embedder"]
+packages = ["bindings.python.llama_embedder"]
 
 [tool.cibuildwheel]
-before-build = ["cd proj && ls -latrh && make lib && cp build/*.so ../"]
 environment = { PROJECT_ROOT = "{project}" }

@@ -6,11 +6,12 @@ python-dist: lib
 	cd bindings/python && pip install build
 	cd bindings/python && python3 -m build
 
-python-cidist:
+python-cidist: lib
 	rm -rf bindings/python/dist/*
-	cd bindings/python && pip install cibuildwheel==2.19.1 auditwheel
-	mkdir -p bindings/python/proj && rsync -av --exclude='bindings' . bindings/python/proj
-	cd bindings/python && python -m cibuildwheel --output-dir dist
+	pip install cibuildwheel==2.19.1 auditwheel
+	export CIBW_SKIP="pp* *musllinux*"
+	export CI=1
+	python -m cibuildwheel --output-dir dist
 
 python-test: python-dist
 	cd bindings/python && pip install pytest
