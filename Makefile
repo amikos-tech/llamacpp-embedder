@@ -8,8 +8,11 @@ python-dist: lib
 
 python-cidist:
 	rm -rf dist/*
-	pip install cibuildwheel==2.19.1 auditwheel
+	pip install cibuildwheel auditwheel
+	export CIBW_BEFORE_BUILD="make lib"
 	export CIBW_SKIP="pp* *musllinux*"
+	export CIBW_TEST_REQUIRES="pytest>=6.0.0 huggingface_hub"
+	export CIBW_TEST_COMMAND="python -m pytest {project}/bindings/python/tests/test"
 	export CI=1
 	python -m cibuildwheel --output-dir dist
 
