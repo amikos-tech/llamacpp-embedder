@@ -52,7 +52,7 @@ class CustomBuildExt(build_ext):
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append("-std=c++11")
             if platform.system() == "Darwin": #TODO we don't need this
-                opts.extend(["-stdlib=libc++", "-mmacosx-version-min=10.7"])
+                opts.extend(["-stdlib=libc++", "-mmacosx-version-min=10.12"])
         elif ct == "msvc":
             opts.append(f'/DVERSION_INFO=\\"{self.distribution.get_version()}\\"')
 

@@ -53,7 +53,7 @@ jobs:
         run: |
           make python-cidist
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8,<3.9"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64"
