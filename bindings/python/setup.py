@@ -33,16 +33,17 @@ class CustomBuildExt(build_ext):
         if not os.path.exists(shared_lib_path):
             raise FileNotFoundError(f"Shared library not found at {shared_lib_path}")
 
-        dest_path = os.path.join(self.build_lib)
-        os.makedirs(dest_path, exist_ok=True)
-        self.copy_file(shared_lib_path, os.path.join(dest_path, os.path.basename(shared_lib_path)))
-
-
-
+        # dest_path = os.path.join(self.build_lib)
+        # os.makedirs(dest_path, exist_ok=True)
+        shutil.copy2(shared_lib_path, self.build_lib)
+        print(os.listdir(self.build_lib))
+        print(os.path.abspath(self.build_lib))
+        # self.copy_file(shared_lib_path, self.build_lib)
         build_ext.run(self)
-        extension_path = self.get_ext_fullpath('llama_embedder')
-        cmd = ['install_name_tool', '-change', f'@rpath/{get_lib_name()}', f'@loader_path/{shared_lib_path}', extension_path]
-        subprocess.check_call(cmd)
+        if platform.system() == "Darwin":
+            extension_path = self.get_ext_fullpath('llama_embedder')
+            cmd = ['install_name_tool', '-change', f'@rpath/{get_lib_name()}', f'@loader_path/{get_lib_name()}', extension_path]
+            subprocess.check_call(cmd)
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
@@ -57,10 +58,11 @@ class CustomBuildExt(build_ext):
 
         for ext in self.extensions:
             ext.extra_compile_args = opts
+            ext.extra_link_args = ["-L"+self.build_lib]
         build_ext.build_extensions(self)
 
 extra_link_args = [
-    "-L./build",
+    "-L.",
     "-lllama-embedder",
     ]
 
@@ -117,7 +119,7 @@ class CustomBdistWheel(bdist_wheel):
 
     def run(self):
         _shared_lib = os.path.join("build", get_lib_name())
-
+        print("CustomBdistWheel",os.path.abspath(self.dist_dir))
         if not os.path.exists(_shared_lib):
             raise FileNotFoundError(f"Shared library not found at {_shared_lib}")
 
@@ -129,6 +131,7 @@ class CustomBdistWheel(bdist_wheel):
         # Copy the shared library to the package directory
         dest = os.path.join(package_dir, os.path.basename(_shared_lib))
         shutil.copy2(_shared_lib, Path(dest).parent)
+        print(os.listdir(Path(dest).parent))
 
         dest_src_path = os.path.join(self.dist_dir, "src")
         shutil.copytree("src", dest_src_path, dirs_exist_ok=True)

@@ -30,9 +30,19 @@ python-test: python-dist
 	cd bindings/python/tests && pytest
 
 python-clean:
-	rm -rf *.egg-info build dist tmp var tests/__pycache__ hnswlib.cpython*.so
+	rm -rf *.egg-info build dist
+
+ARCH := "${_PYTHON_HOST_PLATFORM}"
+IS_X86 = false
+ifeq ($(findstring x86_64,$(ARCH)),x86_64)
+    IS_X86 = true
+endif
 
 lib:
 	rm -rf build && mkdir build
-	cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release
+	@if [ "$(IS_X86)" = "true" ]; then \
+		arch -x86_64 /bin/bash -c "cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release"; \
+	else \
+		cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release; \
+	fi
 #-j $(sysctl -n hw.logicalcpu)
