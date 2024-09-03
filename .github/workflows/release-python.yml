@@ -58,7 +58,9 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
-          CIBW_ENVIRONMENT: PROJECT_ROOT=$GITHUB_WORKSPACE
+          CIBW_BEFORE_BUILD: "make lib"
+          CIBW_TEST_REQUIRES: "pytest>=6.0.0 huggingface_hub"
+          CIBW_TEST_COMMAND: "python -m pytest {project}/bindings/python/tests/test"
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
