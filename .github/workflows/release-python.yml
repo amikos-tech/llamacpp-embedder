@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: python-package-distributions
-          path: bindings/python/dist
+          path: dist
 
   upload:
     runs-on: ubuntu-latest
