@@ -54,7 +54,7 @@ class CustomBuildExt(build_ext):
             opts.append("-std=c++11")
             extra_link_args.append("-L"+self.build_lib)
             if platform.system() == "Darwin":
-                opts.extend(["-stdlib=libc++", "-mmacosx-version-min=10.12"])
+                opts.extend(["-stdlib=libc++", "-mmacosx-version-min=10.9"])
                 extra_link_args.append("-Wl,-rpath,@loader_path/")
             elif platform.system() == "Linux":
                 opts.append("-fvisibility=hidden")
