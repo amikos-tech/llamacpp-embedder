@@ -37,16 +37,15 @@ def find_and_copy_win_shared_lib(build_dir, files_to_find: List[str], target_dir
 
 class CustomBuildExt(build_ext):
     def run(self):
-        ct = self.compiler.compiler_type
         print("doing CustomBuildExt")
-        if ct == "unix":
+        if platform.system() != "Windows":
             shared_lib_path = os.path.join('build', get_lib_name())
             print(f"Looking for shared library at: {shared_lib_path}")
 
             if not os.path.exists(shared_lib_path):
                 raise FileNotFoundError(f"Shared library not found at {shared_lib_path}")
             shutil.copy2(shared_lib_path, self.build_lib)
-        elif ct == "msvc":
+        elif platform.system() == "Windows":
             find_and_copy_win_shared_lib("build", get_lib_name(), self.build_lib)
         # dest_path = os.path.join(self.build_lib)
         # os.makedirs(dest_path, exist_ok=True)
