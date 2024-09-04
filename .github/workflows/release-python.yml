@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+        os: [windows-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'

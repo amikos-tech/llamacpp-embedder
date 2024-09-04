@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llama_embedder"
-version = "0.0.3"
+version = "0.0.4"
 description = "LLama.cpp embedder library python bindings"
 readme = "bindings/python/README.md"
 requires-python = ">=3.8"
