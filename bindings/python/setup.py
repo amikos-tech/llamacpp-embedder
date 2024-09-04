@@ -72,6 +72,7 @@ class CustomBuildExt(build_ext):
                 opts.append("-fvisibility=hidden")
                 extra_link_args.append("-Wl,-rpath,$ORIGIN")
         elif ct == "msvc":
+            extra_link_args.append("/LIBPATH:" + self.build_lib)
             opts.append(f'/DVERSION_INFO=\\"{self.distribution.get_version()}\\"')
 
         for ext in self.extensions:
