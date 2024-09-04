@@ -48,34 +48,31 @@ class CustomBuildExt(build_ext):
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = []
+        extra_link_args=[]
         if ct == "unix":
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append("-std=c++11")
-            if platform.system() == "Darwin": #TODO we don't need this
+            extra_link_args.append("-L"+self.build_lib)
+            if platform.system() == "Darwin":
                 opts.extend(["-stdlib=libc++", "-mmacosx-version-min=10.12"])
+                extra_link_args.append("-Wl,-rpath,@loader_path/")
+            elif platform.system() == "Linux":
+                opts.append("-fvisibility=hidden")
+                extra_link_args.append("-Wl,-rpath,$ORIGIN")
         elif ct == "msvc":
             opts.append(f'/DVERSION_INFO=\\"{self.distribution.get_version()}\\"')
 
         for ext in self.extensions:
             ext.extra_compile_args = opts
-            ext.extra_link_args = ["-L"+self.build_lib]
+            if ext.extra_link_args is None:
+                ext.extra_link_args = []
+            ext.extra_link_args.extend(extra_link_args)
         build_ext.build_extensions(self)
 
 extra_link_args = [
     "-L.",
     "-lllama-embedder",
     ]
-
-if platform.system() == "Darwin":
-    extra_link_args.append(f"-Wl,-rpath,@loader_path/")
-elif platform.system() == "Linux":
-    extra_link_args.append("-Wl,-rpath,$ORIGIN")
-elif platform.system() == "Windows":
-    # Windows doesn't use rpath, so we don't need to add anything here
-    pass
-else:
-    print("Unsupported platform")
-    sys.exit(1)
 
 ext_modules = [
     Extension(
