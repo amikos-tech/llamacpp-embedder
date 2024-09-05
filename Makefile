@@ -24,6 +24,8 @@ python-cidist:
 	pip install cibuildwheel==2.19.1 auditwheel
 	python -m cibuildwheel --output-dir dist
 
+python-sdist:
+	python3 -m build --sdist
 python-test: python-dist
 	cd bindings/python && pip install pytest
 	cd bindings/python && pip install --force-reinstall dist/*.whl
