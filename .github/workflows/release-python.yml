@@ -94,7 +94,7 @@ jobs:
     - name: Create Source Distribution
       run: |
           pip install build
-          make dist
+          make python-sdist
     - name: Publish to Test PyPI
       if: github.event.inputs.create_test_release == 'true'
       uses: pypa/gh-action-pypi-publish@release/v1
