@@ -17,7 +17,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [windows-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+        os: [windows-latest,macos-latest,ubuntu-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+        python: [3.8]
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -53,7 +54,7 @@ jobs:
         run: |
           make python-cidist
         env:
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8,<3.9"
+          CIBW_PROJECT_REQUIRES_PYTHON: "${{ matrix.python }}"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS_MACOS: "arm64" #x86_64
           CIBW_ARCHS_WINDOWS: "AMD64"
@@ -65,7 +66,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions-${{matrix.os}}
+          name: python-package-distributions-${{matrix.os}}-${{matrix.python}}
           path: dist
 
   upload:
