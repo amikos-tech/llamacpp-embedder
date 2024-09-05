@@ -39,7 +39,6 @@ ifeq ($(findstring x86_64,$(ARCH)),x86_64)
 endif
 
 CMAKE_ARCH_FLAG = ""
-
 # Add architecture flag based on the target platform
 ifeq ($(findstring win_arm64,$(ARCH)),win_arm64)
     CMAKE_ARCH_FLAG = "-A ARM64"
@@ -48,6 +47,7 @@ else ifeq ($(findstring win_amd64,$(ARCH)),win_amd64)
 endif
 
 lib:
+	@echo "Building for $(ARCH)"
 	rm -rf build && mkdir build
 	@if [ "$(IS_X86)" = "true" ]; then \
 		arch -x86_64 /bin/bash -c "cd build && cmake ${CMAKE_FLAGS} ${CMAKE_ARCH_FLAG} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release"; \
