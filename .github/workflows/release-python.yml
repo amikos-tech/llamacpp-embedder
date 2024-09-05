@@ -50,6 +50,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
+      - name: Setup MSBuild
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: 'latest'  # Or specify a specific version like '17.0'
+          msbuild-architecture: 'arm64'  # Crucial to target ARM64 tools
       - name: Build wheels
         run: |
           make python-cidist
