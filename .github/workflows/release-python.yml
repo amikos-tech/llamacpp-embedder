@@ -91,6 +91,10 @@ jobs:
         pattern: python-package-distributions*
         merge-multiple: true
         path: dist/
+    - name: Create Source Distribution
+      run: |
+          pip install build
+          make dist
     - name: Publish to Test PyPI
       if: github.event.inputs.create_test_release == 'true'
       uses: pypa/gh-action-pypi-publish@release/v1

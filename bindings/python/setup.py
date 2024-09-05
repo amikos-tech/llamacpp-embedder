@@ -82,12 +82,6 @@ class CustomBuildExt(build_ext):
             ext.extra_link_args.extend(extra_link_args)
         build_ext.build_extensions(self)
 
-
-extra_link_args = [
-    "-L.",
-    "-lllama-embedder",
-]
-
 ext_modules = [
     Extension(
         "llama_embedder",
@@ -101,28 +95,27 @@ ext_modules = [
         libraries=["llama-embedder"],
         library_dirs=[os.getcwd()],  # Add current working directory
         language="c++",
-        extra_link_args=extra_link_args,
+        extra_link_args=[
+            "-L.",
+            "-lllama-embedder",
+        ],
     ),
 ]
 
 
 class CustomSdist(sdist):
     """
-    Here we create the release tree by adding the necessary build deps such as the shared lib and the src or header files
+    Here we create the source distribution.
     """
 
     def make_release_tree(self, base_dir, files):
         sdist.make_release_tree(self, base_dir, files)
-        if platform.system() != "Windows":
-            dest = os.path.join(base_dir, get_lib_name())
-            shutil.copy2(get_lib_name(), dest)
-        elif platform.system() == "Windows":
-            ...
-        dest_src_path = os.path.join(base_dir, "src")
-        shutil.copytree("src", dest_src_path, dirs_exist_ok=True)
+        shutil.copytree("src", os.path.join(base_dir, "src"), dirs_exist_ok=True)
+        shutil.copy2("CMakeLists.txt", base_dir)
+        shutil.copy2("CMakePresets.json", base_dir)
         shutil.copy2("LICENSE.md", base_dir)
         os.makedirs(os.path.join(base_dir, "vendor/llama.cpp"), exist_ok=True)
-        shutil.copy2("vendor/llama.cpp/LICENSE", os.path.join(base_dir, "vendor/llama.cpp/LICENSE"))
+        shutil.copytree("vendor/llama.cpp", os.path.join(base_dir, "vendor/llama.cpp"), dirs_exist_ok=True)
 
 
 class CustomBdistWheel(bdist_wheel):
