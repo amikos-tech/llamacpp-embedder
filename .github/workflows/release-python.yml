@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest] #,macos-latest,ubuntu-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
-        python: [38,39,310,311,312]
+        python: [39] # 38,310,311,312
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
