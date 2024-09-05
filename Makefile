@@ -40,41 +40,14 @@ endif
 
 CMAKE_ARCH_FLAG = ""
 # Add architecture flag based on the target platform
-ifeq ($(findstring win_arm64,$(ARCH)),win_arm64)
+ifeq ($(findstring arm64,$(SETUPTOOLS_EXT_SUFFIX)),arm64)
     CMAKE_ARCH_FLAG = "-A ARM64"
-else ifeq ($(findstring win_amd64,$(ARCH)),win_amd64)
+else
     CMAKE_ARCH_FLAG = "-A x64"
 endif
 
-# Function to detect target architecture
-define detect_arch
-$(shell \
-  if [ -n "$$CIBW_ARCHS" ]; then \
-    case "$$CIBW_ARCHS" in \
-      *arm64*|*aarch64*) echo "arm64" ;; \
-      *x86_64*|*AMD64*) echo "x86_64" ;; \
-      *) echo "unknown" ;; \
-    esac; \
-  elif [ -n "$$_PYTHON_HOST_PLATFORM" ]; then \
-    case "$$_PYTHON_HOST_PLATFORM" in \
-      *arm64*|*aarch64*) echo "arm64" ;; \
-      *x86_64*) echo "x86_64" ;; \
-      *) echo "unknown" ;; \
-    esac; \
-  else \
-    case "$$(uname -m)" in \
-      arm64|aarch64) echo "arm64" ;; \
-      x86_64|amd64) echo "x86_64" ;; \
-      *) echo "unknown" ;; \
-    esac; \
-  fi \
-)
-endef
-
-TARGET_ARCH := $(call detect_arch)
-
 lib:
-	@echo "Building for $(TARGET_ARCH)"
+	@echo "Building for $(CMAKE_ARCH_FLAG)"
 	rm -rf build && mkdir build
 	@if [ "$(IS_X86)" = "true" ]; then \
 		arch -x86_64 /bin/bash -c "cd build && cmake ${CMAKE_FLAGS} ${CMAKE_ARCH_FLAG} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release"; \
