@@ -17,8 +17,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [windows-latest,macos-latest,ubuntu-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
-        python: [38,39,310,311,312]
+        os: [windows-latest] #,macos-latest,ubuntu-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+        python: [39] # 38,310,311,312
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -50,6 +50,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
+      - name: Setup MSBuild
+        if: matrix.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: 'latest'  # Or specify a specific version like '17.0'
+          msbuild-architecture: 'arm64'  # Crucial to target ARM64 tools
       - name: Build wheels
         run: |
           make python-cidist
@@ -58,7 +64,7 @@ jobs:
           CIBW_BUILD: "cp${{matrix.python}}-*"
           CIBW_SKIP: "pp* *musllinux*"
           CIBW_ARCHS_MACOS: "arm64 x86_64"
-          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_ARCHS_WINDOWS: "ARM64"
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
           CIBW_BEFORE_BUILD: "make lib"
           CIBW_TEST_REQUIRES: "pytest>=6.0.0 huggingface_hub"

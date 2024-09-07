@@ -40,11 +40,20 @@ ifeq ($(findstring x86_64,$(ARCH)),x86_64)
     IS_X86 = true
 endif
 
+CMAKE_ARCH_FLAG = ""
+# Add architecture flag based on the target platform
+ifeq ($(findstring arm64,$(SETUPTOOLS_EXT_SUFFIX)),arm64)
+    CMAKE_ARCH_FLAG = "-A ARM64"
+else
+    CMAKE_ARCH_FLAG = "-A x64"
+endif
+
 lib:
+	@echo "Building for $(CMAKE_ARCH_FLAG)"
 	rm -rf build && mkdir build
 	@if [ "$(IS_X86)" = "true" ]; then \
-		arch -x86_64 /bin/bash -c "cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release"; \
+		arch -x86_64 /bin/bash -c "cd build && cmake ${CMAKE_FLAGS} ${CMAKE_ARCH_FLAG} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release"; \
 	else \
-		cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release; \
+		cd build && cmake ${CMAKE_FLAGS} ${CMAKE_ARCH_FLAG} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release; \
 	fi
 #-j $(sysctl -n hw.logicalcpu)
