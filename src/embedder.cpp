@@ -140,7 +140,6 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
                 __func__, n_ctx_train, n_ctx);
     }
     std::unordered_map<std::string, std::string> model_metadata;
-    std::cout << "Metadata count: " << llama_model_meta_count(model) << std::endl;
     for (int i = 0; i < llama_model_meta_count(model); ++i) {
         char key[256];         // Buffer to hold the string result
         size_t key_size = sizeof(key);
