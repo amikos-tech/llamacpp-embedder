@@ -17,6 +17,9 @@ endif()
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
 endif()
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 add_subdirectory(vendor/llama.cpp)
 set(TARGET llama-embedder)
 set(CMAKE_CXX_STANDARD 11)
@@ -36,6 +39,7 @@ FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
 )
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Add the test file
