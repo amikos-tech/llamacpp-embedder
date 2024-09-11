@@ -27,6 +27,24 @@ EXPECT_EQ(output[0].size(), 384);
 free_embedder(embedder);
 }
 
+TEST(EmbedderTest, GetMetadata) {
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+
+std::unordered_map<std::string, std::string> metadata = {};
+get_metadata(embedder, metadata);
+
+EXPECT_NE(embedder, nullptr);
+EXPECT_NE(embedder->context, nullptr);
+EXPECT_NE(embedder->model, nullptr);
+EXPECT_FALSE(metadata.empty()); // Check if the map is empty
+EXPECT_EQ(metadata["general.name"], "snowflake-arctic-embed-s");
+EXPECT_EQ(metadata["general.architecture"], "bert");
+
+free_embedder(embedder);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

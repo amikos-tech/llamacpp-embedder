@@ -17,6 +17,9 @@ endif()
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
 endif()
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 add_subdirectory(vendor/llama.cpp)
 set(TARGET llama-embedder)
 set(CMAKE_CXX_STANDARD 11)
@@ -36,18 +39,18 @@ FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
 )
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Add the test file
-add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.cpp src/embedder.h)
+add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.h)
 
 if(APPLE)
     # build for latest OXS due to gtest version
     set_target_properties(embedder_test PROPERTIES OSX_DEPLOYMENT_TARGET "14.0")
 endif()
 # Link GoogleTest libraries
-target_link_libraries(embedder_test PRIVATE llama-embedder common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
-target_include_directories(embedder_test PUBLIC .)
+target_link_libraries(embedder_test PRIVATE ${TARGET} common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
 # Enable testing
 enable_testing()
 include(GoogleTest)

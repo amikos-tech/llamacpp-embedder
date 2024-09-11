@@ -2,6 +2,7 @@
 // Created by Trayan Azarov on 28.08.24.
 //
 #include <vector>
+#include <unordered_map>
 
 #ifndef LLAMA_CPP_EMBEDDING_H
 #define LLAMA_CPP_EMBEDDING_H
@@ -23,6 +24,7 @@
 struct llama_embedder {
     struct llama_model   * model   = nullptr;
     struct llama_context * context = nullptr;
+    std::unordered_map<std::string, std::string> model_metadata;
 };
 
 
@@ -30,4 +32,5 @@ extern "C" {
 EXPORT_SYMBOL llama_embedder * init_embedder(const char * embedding_model, const uint32_t pooling_type);
 EXPORT_SYMBOL void free_embedder(llama_embedder *embedder);
 EXPORT_SYMBOL void embed(llama_embedder * embedder, const std::vector<std::string> prompts, std::vector<std::vector<float>> &output, int32_t embd_norm);
+EXPORT_SYMBOL void get_metadata(llama_embedder * embedder, std::unordered_map<std::string, std::string> &output);
 }
