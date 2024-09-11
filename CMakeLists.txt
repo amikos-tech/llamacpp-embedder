@@ -31,7 +31,7 @@ install(TARGETS ${TARGET} RUNTIME)
 
 # Add GoogleTest dependency
 find_package(GTest REQUIRED)
-
+include_directories(${GTEST_INCLUDE_DIRS})
 # Add the test file
 add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.cpp src/embedder.h)
 
