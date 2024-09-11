@@ -56,6 +56,23 @@ public:
         ::get_metadata(embedder, metadata);
         return metadata;
     }
+
+    std::vector<std::unordered_map<std::string, std::vector<int32_t>>> tokenize(std::vector<std::string>& texts) {
+        std::vector<std::unordered_map<std::string, std::vector<int32_t>>> final_output;
+        std::vector<llama_tokenizer_data> output;
+        if (!embedder) {
+            throw std::runtime_error("Embedder is not initialized");
+        }
+        ::tokenize(embedder, texts, output);
+
+        for (const auto& tokenizer_data : output) {
+            std::unordered_map<std::string, std::vector<int32_t>> temp;
+            temp["tokens"] = tokenizer_data.tokens;
+            temp["attention_mask"] = tokenizer_data.attention_mask;
+            final_output.push_back(temp);
+        }
+        return final_output;
+    }
 };
 
 PYBIND11_MODULE(llama_embedder, m) {
@@ -80,6 +97,7 @@ py::class_<LlamaEmbedder>(m, "LlamaEmbedder")
 .def("embed", &LlamaEmbedder::embed, "Create embeddings from prompts",
 py::arg("prompts"), py::arg("norm") = NormalizationType::EUCLIDEAN)
 .def("get_metadata", &LlamaEmbedder::get_metadata, "Get metadata of the model")
+.def("tokenize", &LlamaEmbedder::tokenize, "Tokenize the input texts")
 .def("__enter__", [](LlamaEmbedder& self) { return &self; })
 .def("__exit__", [](LlamaEmbedder& self, py::object exc_type, py::object exc_value, py::object traceback) {});
 }

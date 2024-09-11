@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import pytest
 from llama_embedder import LlamaEmbedder, PoolingType, NormalizationType
@@ -35,3 +36,26 @@ def test_metadata(get_model):
     assert metadata_dict["general.name"] == "all-MiniLM-L6-v2"
     assert metadata_dict["general.architecture"] == "bert"
     assert metadata_dict["bert.context_length"] == "512"
+
+
+def get_attn_mask_len(attn_mask: List[int]) -> int:
+    mask_size = 0
+    for mask_t in attn_mask:
+        if mask_t != 0:
+            mask_size += 1
+
+    return mask_size
+
+
+def test_tokenize(get_model):
+    # Using without a context manager
+    embedder = LlamaEmbedder(get_model)
+    tokens = embedder.tokenize(["Hello, world!", "How are you?"])
+    assert tokens is not None
+    assert len(tokens) == 2
+    assert len(tokens[0]["tokens"]) == 512
+    assert len(tokens[0]["attention_mask"]) == 512
+    assert get_attn_mask_len(tokens[0]["attention_mask"]) == 6
+    assert len(tokens[1]["tokens"]) == 512
+    assert len(tokens[1]["attention_mask"]) == 512
+    assert get_attn_mask_len(tokens[1]["attention_mask"]) == 6

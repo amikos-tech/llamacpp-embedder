@@ -11,10 +11,12 @@ python-cidist-local:
 	rm -rf build/lib.*
 	rm -rf build/temp.*
 	pip install cibuildwheel==2.19.1 auditwheel
-	CIBW_BEFORE_BUILD="make lib" \
+	CIBW_BEFORE_BUILD="make lib-test" \
 	CIBW_SKIP="pp* *musllinux*" \
-	CIBW_ARCHS_MACOS="x86_64" \
-	CIBW_PROJECT_REQUIRES_PYTHON=">=3.8,<3.9" \
+	CIBW_ARCHS_MACOS="arm64" \
+	CIBW_PROJECT_REQUIRES_PYTHON=">=3.9,<3.10" \
+  	CIBW_TEST_REQUIRES="pytest>=6.0.0 huggingface_hub" \
+  	CIBW_TEST_COMMAND="python -m pytest {project}/bindings/python/tests/test" \
 	CI=1 \
 	python -m cibuildwheel --output-dir dist
 
