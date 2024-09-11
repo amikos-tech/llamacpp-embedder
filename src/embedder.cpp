@@ -39,7 +39,7 @@ static void batch_decode(llama_context *ctx, llama_batch &batch, float *output, 
 
     // run model
     if (llama_model_has_encoder(model) && !llama_model_has_decoder(model)) {
-        // encoder-only model
+        // encoder-only model - BERT-like models.
         if (llama_encode(ctx, batch) < 0) {
             fprintf(stderr, "%s : failed to encode\n", __func__);
         }
@@ -139,12 +139,27 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
         fprintf(stderr, "%s: warning: model was trained on only %d context tokens (%d specified)\n",
                 __func__, n_ctx_train, n_ctx);
     }
-
+    std::unordered_map<std::string, std::string> model_metadata;
+    std::cout << "Metadata count: " << llama_model_meta_count(model) << std::endl;
+    for (int i = 0; i < llama_model_meta_count(model); ++i) {
+        char key[256];         // Buffer to hold the string result
+        size_t key_size = sizeof(key);
+        char value[1024];
+        size_t value_size = sizeof(value);
+        llama_model_meta_key_by_index(model, i,key,key_size);
+        llama_model_meta_val_str_by_index(model, i,value,value_size);
+        model_metadata[key] = value;
+    }
 
     auto *embedder = new llama_embedder;
     embedder->context = ctx;
     embedder->model = model;
+    embedder->model_metadata = model_metadata;
     return embedder;
+}
+
+void get_metadata(llama_embedder *embedder, std::unordered_map<std::string, std::string> &output) {
+    output = embedder->model_metadata;
 }
 
 

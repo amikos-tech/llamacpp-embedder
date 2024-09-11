@@ -41,8 +41,20 @@ public:
 
     std::vector<std::vector<float>> embed(const std::vector<std::string>& prompts, NormalizationType norm) {
         std::vector<std::vector<float>> output;
+        if (!embedder) {
+            throw std::runtime_error("Embedder is not initialized");
+        }
         ::embed(embedder, prompts, output, static_cast<int32_t>(norm));
         return output;
+    }
+
+    std::unordered_map<std::string, std::string> get_metadata() {
+        std::unordered_map<std::string, std::string> metadata;
+        if (!embedder) {
+            throw std::runtime_error("Embedder is not initialized");
+        }
+        ::get_metadata(embedder, metadata);
+        return metadata;
     }
 };
 
@@ -67,6 +79,7 @@ py::class_<LlamaEmbedder>(m, "LlamaEmbedder")
 .def(py::init<const std::string&, PoolingType>(), py::arg("model_path"), py::arg("pooling_type") = PoolingType::MEAN)  // Updated init
 .def("embed", &LlamaEmbedder::embed, "Create embeddings from prompts",
 py::arg("prompts"), py::arg("norm") = NormalizationType::EUCLIDEAN)
+.def("get_metadata", &LlamaEmbedder::get_metadata, "Get metadata of the model")
 .def("__enter__", [](LlamaEmbedder& self) { return &self; })
 .def("__exit__", [](LlamaEmbedder& self, py::object exc_type, py::object exc_value, py::object traceback) {});
 }
