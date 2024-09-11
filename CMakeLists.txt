@@ -43,7 +43,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Add the test file
-add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.cpp src/embedder.h)
+add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.h)
 
 if(APPLE)
     # build for latest OXS due to gtest version
