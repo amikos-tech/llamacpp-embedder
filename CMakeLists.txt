@@ -50,8 +50,7 @@ if(APPLE)
     set_target_properties(embedder_test PROPERTIES OSX_DEPLOYMENT_TARGET "14.0")
 endif()
 # Link GoogleTest libraries
-target_link_libraries(embedder_test PRIVATE llama-embedder common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
-target_include_directories(embedder_test PUBLIC .)
+target_link_libraries(embedder_test PRIVATE ${TARGET} common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
 # Enable testing
 enable_testing()
 include(GoogleTest)
