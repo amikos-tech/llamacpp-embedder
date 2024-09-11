@@ -28,3 +28,28 @@ target_compile_options(${TARGET} PRIVATE -fvisibility=default)
 target_link_libraries(${TARGET} PRIVATE common llama ${CMAKE_THREAD_LIBS_INIT})
 target_compile_definitions(${TARGET} PRIVATE BUILDING_DLL)
 install(TARGETS ${TARGET} RUNTIME)
+
+# Add GoogleTest dependency
+# Add Google Test
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+# Add the test file
+add_executable(embedder_test test/cpp/test_embedder.cpp src/embedder.cpp src/embedder.h)
+
+if(APPLE)
+    # build for latest OXS due to gtest version
+    set_target_properties(embedder_test PROPERTIES OSX_DEPLOYMENT_TARGET "14.0")
+endif()
+# Link GoogleTest libraries
+target_link_libraries(embedder_test PRIVATE llama-embedder common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
+target_include_directories(embedder_test PUBLIC .)
+# Enable testing
+enable_testing()
+include(GoogleTest)
+# Add test to CTest
+gtest_discover_tests(embedder_test)

@@ -1,0 +1,52 @@
+name: Library Test
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - src/**
+      - test/**
+jobs:
+
+  build:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+    steps:
+      - name: Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev libgtest-dev
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.os == 'ubuntu-latest'
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install Ninja
+        if: matrix.os == 'windows-latest'
+        id: install_ninja
+        run: |
+          choco install ninja
+      - name: Set Mac flags
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
+        run: |
+          echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+      - name: Set Windows Env
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
+      - name: Build and Test
+        run: |
+          make lib-test
+        env:
+          GTEST_COLOR: yes
+          GTEST_OUTPUT: xml:test_results.xml
