@@ -46,9 +46,7 @@ jobs:
           echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
       - name: Build and Test
         run: |
-          make lib
-          cd build
-          ctest -V
+          make lib-test
         env:
           GTEST_COLOR: yes
           GTEST_OUTPUT: xml:test_results.xml

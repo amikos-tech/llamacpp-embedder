@@ -47,4 +47,9 @@ lib:
 	else \
 		cd build && cmake ${CMAKE_FLAGS} -DGGML_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DGGML_RPC=ON -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DBUILD_SHARED_LIBS=OFF .. && cmake --build . --config Release; \
 	fi
+
+lib-test: lib
+	pip install huggingface_hub
+	huggingface-cli download ChristianAzinn/snowflake-arctic-embed-s-gguf --include=snowflake-arctic-embed-s-f16.GGUF --local-dir build/snowflake-arctic-embed-s
+	cd build && ctest -V
 #-j $(sysctl -n hw.logicalcpu)

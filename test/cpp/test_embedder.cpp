@@ -12,7 +12,7 @@ int add(int a, int b) {
 }
 
 TEST(EmbedderTest, InitWithValidModel) {
-const char* valid_model_path = "/Users/tazarov/Downloads/all-MiniLM-L6-v2.F32.gguf";
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
 uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
 llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
 
