@@ -85,13 +85,38 @@ free_embedder(embedder);
 }
 
 TEST(EmbedderTest, Tokenize) {
+    const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+    uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+    llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+    std::vector<std::string> prompts = {"Hello, world!", "How are you?"};
+    std::vector<llama_tokenizer_data> output;
+
+    tokenize(embedder, prompts, output);
+
+    EXPECT_NE(embedder, nullptr);
+    EXPECT_NE(embedder->context, nullptr);
+    EXPECT_NE(embedder->model, nullptr);
+    EXPECT_FALSE(output.empty());
+    EXPECT_EQ(output.size(), 2);
+
+    for (const auto& tokenizer_data : output) {
+        EXPECT_EQ(tokenizer_data.tokens.size(), 6);
+        EXPECT_EQ(tokenizer_data.attention_mask.size(), 6);
+        EXPECT_EQ(get_mask_size(tokenizer_data.tokens), 6); // this works for the given prompts
+    }
+
+    free_embedder(embedder);
+}
+
+
+TEST(EmbedderTest, TokenizeWithPadding) {
 const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
 uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
 llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
 std::vector<std::string> prompts = {"Hello, world!", "How are you?"};
 std::vector<llama_tokenizer_data> output;
 
-tokenize(embedder, prompts, output);
+tokenize(embedder, prompts, output, true,false,true);
 
 EXPECT_NE(embedder, nullptr);
 EXPECT_NE(embedder->context, nullptr);
@@ -100,9 +125,9 @@ EXPECT_FALSE(output.empty());
 EXPECT_EQ(output.size(), 2);
 
 for (const auto& tokenizer_data : output) {
-    EXPECT_EQ(tokenizer_data.tokens.size(), 512);
-    EXPECT_EQ(tokenizer_data.attention_mask.size(), 512);
-    EXPECT_EQ(get_mask_size(tokenizer_data.tokens), 6); // this works for the given prompts
+EXPECT_EQ(tokenizer_data.tokens.size(), 512);
+EXPECT_EQ(tokenizer_data.attention_mask.size(), 512);
+EXPECT_EQ(get_mask_size(tokenizer_data.tokens), 6); // this works for the given prompts
 }
 
 free_embedder(embedder);

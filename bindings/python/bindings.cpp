@@ -69,7 +69,7 @@ public:
         return metadata;
     }
 
-    std::vector<TokenizerData> tokenize(std::vector<std::string>& texts, const bool add_special_tokens = true, const bool parse_special = false) {
+    std::vector<TokenizerData> tokenize(std::vector<std::string>& texts, const bool add_special_tokens = true, const bool parse_special = false, const bool enable_padding = false) {
         std::vector<TokenizerData> final_output;
         std::vector<llama_tokenizer_data> output;
         if (!embedder) {
@@ -78,7 +78,7 @@ public:
         if (texts.empty()) {
             throw std::runtime_error("Texts are empty");
         }
-        ::tokenize(embedder, texts, output, add_special_tokens, parse_special);
+        ::tokenize(embedder, texts, output, add_special_tokens, parse_special, enable_padding);
 
         for (const auto& tokenizer_data : output) {
             TokenizerData temp(tokenizer_data.tokens, tokenizer_data.attention_mask);
@@ -116,7 +116,7 @@ py::class_<LlamaEmbedder>(m, "LlamaEmbedder")
 .def("embed", &LlamaEmbedder::embed, "Create embeddings from prompts",
 py::arg("texts"), py::arg("norm") = NormalizationType::EUCLIDEAN)
 .def("get_metadata", &LlamaEmbedder::get_metadata, "Get metadata of the model")
-.def("tokenize", &LlamaEmbedder::tokenize, "Tokenize the input texts",py::arg("texts"), py::arg("add_special_tokens") = true, py::arg("parse_special") = false)
+.def("tokenize", &LlamaEmbedder::tokenize, "Tokenize the input texts",py::arg("texts"), py::arg("add_special_tokens") = true, py::arg("parse_special") = false, py::arg("enable_padding") = false)
 .def("__enter__", [](LlamaEmbedder& self) { return &self; })
 .def("__exit__", [](LlamaEmbedder& self, py::object exc_type, py::object exc_value, py::object traceback) {});
 }

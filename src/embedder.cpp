@@ -80,7 +80,7 @@ void my_log_callback(enum ggml_log_level level, const char *text, void *user_dat
 }
 
 // Function to generate attention mask
-std::vector<int32_t> generate_attention_mask(const std::vector<int>& token_ids, int max_length) {
+std::vector<int32_t> generate_attention_mask(const std::vector<int>& token_ids, unsigned long  max_length) {
     std::vector<int32_t> attention_mask(max_length, 0);  // Initialize mask with 0s
 
     for (size_t i = 0; i < token_ids.size() && i < max_length; ++i) {
@@ -93,7 +93,7 @@ std::vector<int32_t> generate_attention_mask(const std::vector<int>& token_ids, 
 }
 
 /// Function to pad token IDs and add CLS and SEP tokens
-std::vector<int> pad_tokens(const std::vector<int>& token_ids, int max_length,
+std::vector<int> pad_tokens(const std::vector<int>& token_ids, unsigned long max_length,
                                             int pad_token_id = 0) {
     std::vector<int> padded_token_ids;
 
@@ -186,7 +186,7 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
     return embedder;
 }
 
-void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output,const bool add_special_tokens, const bool parse_special) {
+void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output,const bool add_special_tokens, const bool parse_special, const bool enable_padding) {
     if (!embedder) {
         throw std::runtime_error("Error: Null pointer passed to tokenize function");
     }
@@ -207,13 +207,16 @@ void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, s
         char value[1024];
         size_t value_size = sizeof(value);
         llama_model_meta_val_str(embedder->model, "bert.context_length",value, value_size);
-        int max_length = std::stoi(value);
-        memset(value, 0, value_size);
-        llama_model_meta_val_str(embedder->model, "tokenizer.ggml.padding_token_id",value, value_size);
-        int padding_token_id = std::stoi(value);
-        auto padded_tokens = pad_tokens(tokens,max_length , padding_token_id);
-        auto attention_mask = generate_attention_mask(padded_tokens, max_length);
-        output.push_back({padded_tokens, attention_mask});
+        unsigned long max_length = tokens.size();
+        if (enable_padding) {
+            max_length = std::stoi(value);
+            memset(value, 0, value_size);
+            llama_model_meta_val_str(embedder->model, "tokenizer.ggml.padding_token_id",value, value_size);
+            int padding_token_id = std::stoi(value);
+            tokens = pad_tokens(tokens,max_length , padding_token_id);
+        }
+        auto attention_mask = generate_attention_mask(tokens, max_length);
+        output.push_back({tokens, attention_mask});
     }
 }
 

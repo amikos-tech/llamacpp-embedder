@@ -16,10 +16,28 @@ intended for advanced users that want a custom builds e.g. for GPU support.
 
 This project requires cmake to build.
 
+### Shared library
+
+To build the shared library run:
+
 ```bash
-sysctl -a
-mkdir build
-cd build
-cmake -DLLAMA_FATAL_WARNINGS=ON -DGGML_METAL_EMBED_LIBRARY=ON -DLLAMA_CURL=ON -DGGML_RPC=ON -DBUILD_SHARED_LIBS=ON ..
-cmake --build . --config Release -j $(sysctl -n hw.logicalcpu)
+make lib
 ```
+
+To run the tests:
+
+```bash
+make lib-test
+```
+
+### Python bindings
+
+To build the python bindings run:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+make python-cidist-local
+```
+
+The above command will build the shared library, the python binding package and run the tests.
