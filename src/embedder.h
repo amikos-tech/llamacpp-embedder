@@ -27,10 +27,15 @@ struct llama_embedder {
     std::unordered_map<std::string, std::string> model_metadata;
 };
 
+struct llama_tokenizer_data {
+    std::vector<int32_t> tokens;
+    std::vector<int32_t> attention_mask;
+};
 
 extern "C" {
-EXPORT_SYMBOL llama_embedder * init_embedder(const char * embedding_model, const uint32_t pooling_type);
-EXPORT_SYMBOL void free_embedder(llama_embedder *embedder);
-EXPORT_SYMBOL void embed(llama_embedder * embedder, const std::vector<std::string> prompts, std::vector<std::vector<float>> &output, int32_t embd_norm);
-EXPORT_SYMBOL void get_metadata(llama_embedder * embedder, std::unordered_map<std::string, std::string> &output);
+EXPORT_SYMBOL llama_embedder * init_embedder(const char * embedding_model, uint32_t pooling_type) noexcept(false);
+EXPORT_SYMBOL void free_embedder(llama_embedder *embedder) noexcept;
+EXPORT_SYMBOL void embed(llama_embedder * embedder, const std::vector<std::string> & texts, std::vector<std::vector<float>> & output, int32_t embd_norm) noexcept(false);
+EXPORT_SYMBOL void get_metadata(llama_embedder * embedder, std::unordered_map<std::string, std::string> &output) noexcept(false);
+EXPORT_SYMBOL void tokenize(llama_embedder * embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output, bool add_special_tokens = true, bool parse_special = false, bool enable_padding = false) noexcept(false);
 }

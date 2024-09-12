@@ -79,6 +79,35 @@ void my_log_callback(enum ggml_log_level level, const char *text, void *user_dat
     // Do nothing, effectively silencing the log
 }
 
+// Function to generate attention mask
+std::vector<int32_t> generate_attention_mask(const std::vector<int>& token_ids, unsigned long  max_length) {
+    std::vector<int32_t> attention_mask(max_length, 0);  // Initialize mask with 0s
+
+    for (size_t i = 0; i < token_ids.size() && i < max_length; ++i) {
+        if (token_ids[i] != 0) {
+            attention_mask[i] = 1;  // Set 1 for non-padding tokens (non-zero)
+        }
+    }
+
+    return attention_mask;
+}
+
+/// Function to pad token IDs and add CLS and SEP tokens
+std::vector<int> pad_tokens(const std::vector<int>& token_ids, unsigned long max_length,
+                                            int pad_token_id = 0) {
+    std::vector<int> padded_token_ids;
+
+    // Add the actual tokens
+    padded_token_ids.insert(padded_token_ids.end(), token_ids.begin(), token_ids.end());
+
+    // Add padding if token size is still less than max_length
+    if (padded_token_ids.size() < max_length) {
+        padded_token_ids.resize(max_length, pad_token_id);
+    }
+
+    return padded_token_ids;
+}
+
 enum llama_pooling_type from_uint(const uint32_t pooling_type){
     switch (pooling_type) {
         case 0:
@@ -157,12 +186,46 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
     return embedder;
 }
 
+void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output,const bool add_special_tokens, const bool parse_special, const bool enable_padding) {
+    if (!embedder) {
+        throw std::runtime_error("Error: Null pointer passed to tokenize function");
+    }
+    if (texts.empty()){
+        fprintf(stderr, "Warn: empty texts.\n");
+        return;
+    }
+
+    char model_arch[1024];
+    size_t vmodel_arch_size = sizeof(model_arch);
+    llama_model_meta_val_str(embedder->model, "general.architecture",model_arch, vmodel_arch_size);
+    if (strcmp(model_arch, "bert") != 0) {
+        throw std::runtime_error("error: tokenize function is only supported for BERT-like models");
+    }
+
+    for (const auto &text: texts) {
+        auto tokens = ::llama_tokenize(embedder->context, text, add_special_tokens, parse_special);
+        char value[1024];
+        size_t value_size = sizeof(value);
+        llama_model_meta_val_str(embedder->model, "bert.context_length",value, value_size);
+        unsigned long max_length = tokens.size();
+        if (enable_padding) {
+            max_length = std::stoi(value);
+            memset(value, 0, value_size);
+            llama_model_meta_val_str(embedder->model, "tokenizer.ggml.padding_token_id",value, value_size);
+            int padding_token_id = std::stoi(value);
+            tokens = pad_tokens(tokens,max_length , padding_token_id);
+        }
+        auto attention_mask = generate_attention_mask(tokens, max_length);
+        output.push_back({tokens, attention_mask});
+    }
+}
+
 void get_metadata(llama_embedder *embedder, std::unordered_map<std::string, std::string> &output) {
     output = embedder->model_metadata;
 }
 
 
-void free_embedder(llama_embedder *embedder) {
+void free_embedder(llama_embedder *embedder) noexcept {
     if (embedder->model) {
         llama_free_model(embedder->model);
     }
@@ -174,12 +237,12 @@ void free_embedder(llama_embedder *embedder) {
 }
 
 // Creates embeddings from list of strings
-void embed(llama_embedder *embedder, const std::vector<std::string> prompts, std::vector<std::vector<float>> &output,
+void embed(llama_embedder *embedder, const std::vector<std::string> & texts, std::vector<std::vector<float>> & output,
            int32_t embd_norm) {
     if (!embedder) {
         throw std::runtime_error("Error: Null pointer passed to embed function");
     }
-    if (prompts.empty()){
+    if (texts.empty()){
         fprintf(stderr, "Warn: empty prompts.\n");
         return;
     }
@@ -198,8 +261,10 @@ void embed(llama_embedder *embedder, const std::vector<std::string> prompts, std
 
     // tokenize the prompts and trim
     std::vector<std::vector<int32_t>> inputs;
-    for (const auto &prompt: prompts) {
-        auto inp = ::llama_tokenize(ctx, prompt, true, false);
+    for (const auto &prompt: texts) {
+        std::vector<llama_tokenizer_data> output_token_data;
+        ::tokenize(embedder, {prompt}, output_token_data);
+        auto inp = output_token_data[0].tokens;
         if (inp.size() > n_batch) {
             fprintf(stderr,
                     "%s: error: number of tokens in input line (%lld) exceeds batch size (%lld), increase batch size and re-run\n",
@@ -220,7 +285,7 @@ void embed(llama_embedder *embedder, const std::vector<std::string> prompts, std
     }
 
     // initialize batch
-    const int n_prompts = prompts.size();
+    const int n_prompts = texts.size();
     struct llama_batch batch = llama_batch_init((long long int) n_batch, 0, 1);
 
     // count number of embeddings

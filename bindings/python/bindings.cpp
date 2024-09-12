@@ -19,6 +19,14 @@ enum class PoolingType {
     LAST = 3,
 };
 
+class TokenizerData {
+public:
+    std::vector<int32_t> tokens;
+    std::vector<int32_t> attention_mask;
+
+    TokenizerData(const std::vector<int32_t>& tokens, const std::vector<int32_t>& attention_mask) : tokens(tokens), attention_mask(attention_mask) {}
+};
+
 
 class LlamaEmbedder {
 private:
@@ -39,22 +47,44 @@ public:
         }
     }
 
-    std::vector<std::vector<float>> embed(const std::vector<std::string>& prompts, NormalizationType norm) {
-        std::vector<std::vector<float>> output;
+    std::vector<std::vector<float>> embed(const std::vector<std::string>& texts, NormalizationType norm) {
         if (!embedder) {
             throw std::runtime_error("Embedder is not initialized");
         }
-        ::embed(embedder, prompts, output, static_cast<int32_t>(norm));
+
+        if (texts.empty()) {
+            throw std::runtime_error("Texts are empty");
+        }
+        std::vector<std::vector<float>> output;
+        ::embed(embedder, texts, output, static_cast<int32_t>(norm));
         return output;
     }
 
     std::unordered_map<std::string, std::string> get_metadata() {
-        std::unordered_map<std::string, std::string> metadata;
         if (!embedder) {
             throw std::runtime_error("Embedder is not initialized");
         }
+        std::unordered_map<std::string, std::string> metadata;
         ::get_metadata(embedder, metadata);
         return metadata;
+    }
+
+    std::vector<TokenizerData> tokenize(std::vector<std::string>& texts, const bool add_special_tokens = true, const bool parse_special = false, const bool enable_padding = false) {
+        std::vector<TokenizerData> final_output;
+        std::vector<llama_tokenizer_data> output;
+        if (!embedder) {
+            throw std::runtime_error("Embedder is not initialized");
+        }
+        if (texts.empty()) {
+            throw std::runtime_error("Texts are empty");
+        }
+        ::tokenize(embedder, texts, output, add_special_tokens, parse_special, enable_padding);
+
+        for (const auto& tokenizer_data : output) {
+            TokenizerData temp(tokenizer_data.tokens, tokenizer_data.attention_mask);
+            final_output.push_back(temp);
+        }
+        return final_output;
     }
 };
 
@@ -75,11 +105,18 @@ py::enum_<PoolingType>(m, "PoolingType")
 .value("LAST", PoolingType::LAST)
 .export_values();
 
+py::class_<TokenizerData>(m, "TokenizerData")
+.def(py::init<const std::vector<int32_t>&, const std::vector<int32_t>&>(), py::arg("tokens"), py::arg("attention_mask"))
+.def_readwrite("tokens", &TokenizerData::tokens)  // Bind tokens attribute
+.def_readwrite("attention_mask", &TokenizerData::attention_mask);  // Bind attention_mask attribute
+
+
 py::class_<LlamaEmbedder>(m, "LlamaEmbedder")
 .def(py::init<const std::string&, PoolingType>(), py::arg("model_path"), py::arg("pooling_type") = PoolingType::MEAN)  // Updated init
 .def("embed", &LlamaEmbedder::embed, "Create embeddings from prompts",
-py::arg("prompts"), py::arg("norm") = NormalizationType::EUCLIDEAN)
+py::arg("texts"), py::arg("norm") = NormalizationType::EUCLIDEAN)
 .def("get_metadata", &LlamaEmbedder::get_metadata, "Get metadata of the model")
+.def("tokenize", &LlamaEmbedder::tokenize, "Tokenize the input texts",py::arg("texts"), py::arg("add_special_tokens") = true, py::arg("parse_special") = false, py::arg("enable_padding") = false)
 .def("__enter__", [](LlamaEmbedder& self) { return &self; })
 .def("__exit__", [](LlamaEmbedder& self, py::object exc_type, py::object exc_value, py::object traceback) {});
 }
