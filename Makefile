@@ -14,6 +14,8 @@ python-cidist-local:
 	CIBW_BEFORE_BUILD="make lib-test" \
 	CIBW_SKIP="pp* *musllinux*" \
 	CIBW_ARCHS_MACOS="arm64" \
+  	CIBW_ARCHS_WINDOWS="AMD64" \
+  	CIBW_ARCHS_LINUX="x86_64 aarch64" \
 	CIBW_PROJECT_REQUIRES_PYTHON=">=3.9,<3.10" \
   	CIBW_TEST_REQUIRES="pytest>=6.0.0 huggingface_hub" \
   	CIBW_TEST_COMMAND="python -m pytest {project}/bindings/python/tests/test" \
