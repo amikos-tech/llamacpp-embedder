@@ -186,7 +186,7 @@ llama_embedder *init_embedder(const char *embedding_model, const uint32_t poolin
     return embedder;
 }
 
-void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output) {
+void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, std::vector<llama_tokenizer_data> &output,const bool add_special_tokens, const bool parse_special) {
     if (!embedder) {
         throw std::runtime_error("Error: Null pointer passed to tokenize function");
     }
@@ -203,7 +203,7 @@ void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, s
     }
 
     for (const auto &text: texts) {
-        auto tokens = ::llama_tokenize(embedder->context, text, true, false);
+        auto tokens = ::llama_tokenize(embedder->context, text, add_special_tokens, parse_special);
         char value[1024];
         size_t value_size = sizeof(value);
         llama_model_meta_val_str(embedder->model, "bert.context_length",value, value_size);
@@ -222,7 +222,7 @@ void get_metadata(llama_embedder *embedder, std::unordered_map<std::string, std:
 }
 
 
-void free_embedder(llama_embedder *embedder) {
+void free_embedder(llama_embedder *embedder) noexcept {
     if (embedder->model) {
         llama_free_model(embedder->model);
     }
@@ -234,12 +234,12 @@ void free_embedder(llama_embedder *embedder) {
 }
 
 // Creates embeddings from list of strings
-void embed(llama_embedder *embedder, const std::vector<std::string> & prompts, std::vector<std::vector<float>> & output,
+void embed(llama_embedder *embedder, const std::vector<std::string> & texts, std::vector<std::vector<float>> & output,
            int32_t embd_norm) {
     if (!embedder) {
         throw std::runtime_error("Error: Null pointer passed to embed function");
     }
-    if (prompts.empty()){
+    if (texts.empty()){
         fprintf(stderr, "Warn: empty prompts.\n");
         return;
     }
@@ -258,8 +258,10 @@ void embed(llama_embedder *embedder, const std::vector<std::string> & prompts, s
 
     // tokenize the prompts and trim
     std::vector<std::vector<int32_t>> inputs;
-    for (const auto &prompt: prompts) {
-        auto inp = ::llama_tokenize(ctx, prompt, true, false);
+    for (const auto &prompt: texts) {
+        std::vector<llama_tokenizer_data> output_token_data;
+        ::tokenize(embedder, {prompt}, output_token_data);
+        auto inp = output_token_data[0].tokens;
         if (inp.size() > n_batch) {
             fprintf(stderr,
                     "%s: error: number of tokens in input line (%lld) exceeds batch size (%lld), increase batch size and re-run\n",
@@ -280,7 +282,7 @@ void embed(llama_embedder *embedder, const std::vector<std::string> & prompts, s
     }
 
     // initialize batch
-    const int n_prompts = prompts.size();
+    const int n_prompts = texts.size();
     struct llama_batch batch = llama_batch_init((long long int) n_batch, 0, 1);
 
     // count number of embeddings

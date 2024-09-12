@@ -24,6 +24,14 @@ def test_basic(get_model):
     assert len(embeddings[0]) == 384
 
 
+def test_embed_err_no_texts(get_model):
+    # Using without a context manager
+    embedder = LlamaEmbedder(get_model)
+    with pytest.raises(Exception) as e:
+        embedder.embed([])
+    assert str(e.value) == "Texts are empty"
+
+
 def test_metadata(get_model):
     # Using without a context manager
     embedder = LlamaEmbedder(get_model)
@@ -50,12 +58,36 @@ def get_attn_mask_len(attn_mask: List[int]) -> int:
 def test_tokenize(get_model):
     # Using without a context manager
     embedder = LlamaEmbedder(get_model)
-    tokens = embedder.tokenize(["Hello, world!", "How are you?"])
-    assert tokens is not None
-    assert len(tokens) == 2
-    assert len(tokens[0]["tokens"]) == 512
-    assert len(tokens[0]["attention_mask"]) == 512
-    assert get_attn_mask_len(tokens[0]["attention_mask"]) == 6
-    assert len(tokens[1]["tokens"]) == 512
-    assert len(tokens[1]["attention_mask"]) == 512
-    assert get_attn_mask_len(tokens[1]["attention_mask"]) == 6
+    tokenizer_data = embedder.tokenize(["Hello, world!", "How are you?"])
+    assert tokenizer_data is not None
+    assert len(tokenizer_data) == 2
+    assert len(tokenizer_data[0].tokens) == 512
+    assert len(tokenizer_data[0].attention_mask) == 512
+    assert get_attn_mask_len(tokenizer_data[0].attention_mask) == 6
+    assert len(tokenizer_data[1].tokens) == 512
+    assert len(tokenizer_data[1].attention_mask) == 512
+    assert get_attn_mask_len(tokenizer_data[1].attention_mask) == 6
+
+
+def test_tokenize_without_special_tokens(get_model):
+    # Using without a context manager
+    embedder = LlamaEmbedder(get_model)
+    tokenizer_data = embedder.tokenize(["Hello, world!", "How are you?"],add_special_tokens=False)
+    assert tokenizer_data is not None
+    assert len(tokenizer_data) == 2
+    assert len(tokenizer_data[0].tokens) == 512
+    assert len(tokenizer_data[0].attention_mask) == 512
+    assert get_attn_mask_len(tokenizer_data[0].attention_mask) == 4
+    assert len(tokenizer_data[1].tokens) == 512
+    assert len(tokenizer_data[1].attention_mask) == 512
+    assert get_attn_mask_len(tokenizer_data[1].attention_mask) == 4
+
+
+def test_tokenize_err_no_texts(get_model):
+    # Using without a context manager
+    embedder = LlamaEmbedder(get_model)
+    with pytest.raises(Exception) as e:
+        embedder.tokenize([])
+    assert str(e.value) == "Texts are empty"
+
+

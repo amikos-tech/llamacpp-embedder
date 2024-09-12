@@ -24,7 +24,18 @@ uint32_t get_mask_size(const std::vector<int>& tokens) {
     return mask_size;
 }
 
-TEST(EmbedderTest, InitWithValidModel) {
+TEST(EmbedderTest, InitWithModel) {
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+EXPECT_NE(embedder, nullptr);
+EXPECT_NE(embedder->context, nullptr);
+EXPECT_NE(embedder->model, nullptr);
+
+free_embedder(embedder);
+}
+
+TEST(EmbedderTest, EmbedWithModel) {
 const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
 uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
 llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
@@ -36,6 +47,21 @@ EXPECT_NE(embedder->context, nullptr);
 EXPECT_NE(embedder->model, nullptr);
 EXPECT_EQ(output.size(), 1);
 EXPECT_EQ(output[0].size(), 384);
+
+free_embedder(embedder);
+}
+
+TEST(EmbedderTest, EmbedWithModelNoTextsError) {
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+
+std::vector<std::vector<float>> output;
+embed(embedder, std::vector<std::string>{}, output, 2);
+EXPECT_NE(embedder, nullptr);
+EXPECT_NE(embedder->context, nullptr);
+EXPECT_NE(embedder->model, nullptr);
+EXPECT_EQ(output.size(), 0);
 
 free_embedder(embedder);
 }
