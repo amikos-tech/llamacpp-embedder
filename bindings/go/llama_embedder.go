@@ -8,6 +8,7 @@ package llama_embedder
 #cgo !clang, !darwin LDFLAGS: -ldl -lstdc++
 #cgo darwin LDFLAGS: -ldl -stdlib=libc++
 #cgo clang LDFLAGS: -ldl -stdlib=libc++
+#cgo CPPFLAGS: -x c++
 #include <stdlib.h>
 #include "wrapper.h"
 
