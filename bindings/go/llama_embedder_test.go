@@ -20,7 +20,9 @@ func TestLlamaEmbedder(t *testing.T) {
 	require.NoError(t, err, "Failed to download model")
 	t.Cleanup(func() {
 		err := os.Remove("all-MiniLM-L6-v2.Q4_0.gguf")
-		fmt.Printf("Error removing file: %v", err)
+		if err != nil {
+			fmt.Printf("Error removing file: %v", err)
+		}
 	})
 	t.Run("Test Init", func(t *testing.T) {
 		_, closeFunc, err := NewLlamaEmbedder(sharedLibFile, defaultModelFile)
@@ -32,7 +34,8 @@ func TestLlamaEmbedder(t *testing.T) {
 		require.NoError(t, err, "Failed to create LlamaEmbedder")
 		t.Cleanup(closeFunc)
 
-		res := e.EmbedTexts([]string{"hello", "world"})
+		res, err := e.EmbedTexts([]string{"hello", "world"})
+		require.NoError(t, err, "Failed to embed texts")
 		require.Len(t, res, 2, "Failed to embed texts")
 		for _, r := range res {
 			require.Len(t, r, 384, "Failed to embed texts")
@@ -60,7 +63,8 @@ func TestLlamaEmbedder(t *testing.T) {
 		t.Cleanup(func() {
 			closeFunc()
 		})
-		res := e.EmbedTexts([]string{"hello", "world"})
+		res, err := e.EmbedTexts([]string{"hello", "world"})
+		require.NoError(t, err, "Failed to embed texts")
 		require.Len(t, res, 2, "Failed to embed texts")
 		for _, r := range res {
 			require.Len(t, r, 384, "Failed to embed texts")
@@ -81,7 +85,8 @@ func TestLlamaEmbedder(t *testing.T) {
 			err := os.RemoveAll("./cache")
 			require.NoError(t, err, "Failed to remove cache dir")
 		})
-		res := e.EmbedTexts([]string{"hello", "world"})
+		res, err := e.EmbedTexts([]string{"hello", "world"})
+		require.NoError(t, err, "Failed to embed texts")
 		require.Len(t, res, 2, "Failed to embed texts")
 		for _, r := range res {
 			require.Len(t, r, 384, "Failed to embed texts")

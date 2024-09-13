@@ -2,7 +2,7 @@ package llama_embedder
 
 /*
 #cgo CFLAGS: -I.
-#cgo CXXFLAGS: -I. -std=c++11
+#cgo CXXFLAGS: -I. -std=c++11 -Wall -Wextra -pedantic
 #cgo !clang, !darwin LDFLAGS: -ldl -lstdc++
 #cgo darwin LDFLAGS: -ldl -stdlib=libc++
 #cgo clang LDFLAGS: -ldl -stdlib=libc++
@@ -172,7 +172,7 @@ func (e *LlamaEmbedder) Close() {
 }
 
 // EmbedTexts embeds the given texts using the model
-func (e *LlamaEmbedder) EmbedTexts(texts []string) [][]float32 {
+func (e *LlamaEmbedder) EmbedTexts(texts []string) ([][]float32, error) {
 	cTexts := make([]*C.char, len(texts))
 	for i, t := range texts {
 		cTexts[i] = C.CString(t)
@@ -183,11 +183,13 @@ func (e *LlamaEmbedder) EmbedTexts(texts []string) [][]float32 {
 			C.free(unsafe.Pointer(t))
 		}
 	}()
-
-	result := C.llama_embedder_embed((**C.char)(unsafe.Pointer(&cTexts[0])), C.size_t(len(texts)), C.int32_t(int32(e.defaultNormalizationType)))
+	result := (C.FloatMatrixW)(C.llama_embedder_embed((**C.char)(unsafe.Pointer(&cTexts[0])), C.size_t(len(texts)), C.int32_t(int32(e.defaultNormalizationType))))
 	defer func() {
-		C.free_float_matrix(result)
+		C.free_float_matrixw(&result)
 	}()
+	if result.data == nil {
+		return nil, fmt.Errorf("failed to embed text: %v", C.GoString(C.get_last_error()))
+	}
 
 	// Convert the result to a Go slice
 	goResult := make([][]float32, result.rows)
@@ -198,7 +200,7 @@ func (e *LlamaEmbedder) EmbedTexts(texts []string) [][]float32 {
 			goResult[i][j] = float32(*(*C.float)(unsafe.Pointer(uintptr(unsafe.Pointer(result.data)) + uintptr(index)*unsafe.Sizeof(C.float(0)))))
 		}
 	}
-	return goResult
+	return goResult, nil
 }
 
 // GetMetadata returns the metadata associated with the model

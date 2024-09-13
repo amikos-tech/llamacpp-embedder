@@ -8,21 +8,23 @@
 #ifndef WRAPPER_H
 #define WRAPPER_H
 
-typedef struct {
-    float *data;
-    size_t rows;
-    size_t cols;
-} FloatMatrix;
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct {
+    float *data;
+    size_t rows;
+    size_t cols;
+} FloatMatrixW;
+
 void *load_library(const char *shared_lib_path);
 int init_llama_embedder(char *model_path, uint32_t pooling_type);
 void free_llama_embedder();
-FloatMatrix llama_embedder_embed(const char **texts, size_t text_count, int32_t norm);
-void free_float_matrix(FloatMatrix fm);
+FloatMatrixW llama_embedder_embed(const char **texts, size_t text_count, int32_t norm);
+void free_float_matrixw(FloatMatrixW * fm);
 
 const char* get_last_error();
 

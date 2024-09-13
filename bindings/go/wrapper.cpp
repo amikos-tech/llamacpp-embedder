@@ -7,21 +7,25 @@
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
+#include <dlfcn.h>
 #include <stdexcept>
 #include "../../src/embedder.h"
 #include "wrapper.h"
 
 typedef llama_embedder * (*init_embedder_local_func)(const char *, uint32_t);
 typedef void (*free_embedder_local_func)(llama_embedder *);
-typedef void (*embed_local_func)(llama_embedder *, const std::vector<std::string> &, std::vector<std::vector<float>> &, int32_t);
-typedef void (*get_metadata_local_func)(llama_embedder *, std::unordered_map<std::string, std::string> &);
+typedef FloatMatrix (*embed_c_local_func)(llama_embedder *, const char  ** , size_t , int32_t);
+typedef int (*get_metadata_c_local_func)(llama_embedder *,MetadataPair**, size_t*);
+typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
 
 void * libh = NULL;
 llama_embedder * embedder = NULL;
 init_embedder_local_func init_embedder_f = NULL;
 free_embedder_local_func free_embedder_f = NULL;
-embed_local_func embed_f = NULL;
-get_metadata_local_func get_metadata_f = NULL;
+embed_c_local_func embed_f = NULL;
+get_metadata_c_local_func get_metadata_f = NULL;
+free_metadata_c_local_func free_metadata_f = NULL;
 
 static std::string last_error;
 
@@ -54,19 +58,27 @@ void * load_library(const char * shared_lib_path){
             throw std::runtime_error(error_message);
         }
 
-        embed_f = (void (*)(llama_embedder *, const std::vector<std::string> &, std::vector<std::vector<float>> &, int32_t)) dlsym(libh, "embed");
+        embed_f = (embed_c_local_func) dlsym(libh, "embed_c");
 
         if (!embed_f) {
             std::string error_message = "Failed to load embed function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
         }
 
-        get_metadata_f = (void (*)(llama_embedder *, std::unordered_map<std::string, std::string> &)) dlsym(libh, "get_metadata");
+        get_metadata_f = (get_metadata_c_local_func) dlsym(libh, "get_metadata_c");
 
         if (!get_metadata_f) {
             std::string error_message = "Failed to load get_metadata function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
         }
+
+        free_metadata_f = (free_metadata_c_local_func) dlsym(libh, "free_metadata_c");
+
+        if (!free_metadata_f) {
+            std::string error_message = "Failed to load free_metadata function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
 
         return libh;
     } catch (const std::exception &e) {
@@ -85,7 +97,7 @@ int init_llama_embedder(char * model_path, uint32_t pooling_type = 1 ) {
         return -1;
     }
     try {
-        embedder = init_embedder_f(model_path, 1);
+        embedder = init_embedder_f(model_path, pooling_type);
         if (!embedder) {
             throw std::runtime_error("Embedder not initialized properly.");
         }
@@ -106,39 +118,59 @@ void free_llama_embedder() {
     }
 }
 
-FloatMatrix llama_embedder_embed(const char** texts, size_t text_count, int32_t norm) {
-    std::vector<std::string> texts_vec;
-    for (size_t i = 0; i < text_count; i++) {
-        texts_vec.push_back(texts[i]);
-    }
-    std::vector<std::vector<float>> output;
-    embed_f(embedder, texts_vec, output, norm);
+FloatMatrixW llama_embedder_embed(const char** texts, size_t text_count, int32_t norm) {
+    FloatMatrixW fm = {NULL, 0, 0};
+    try {
+        std::vector<std::vector<float>> output;
+        auto f1 = embed_f(embedder, texts, text_count, norm);
+        fm.data = f1.data;
+        fm.rows = f1.rows;
+        fm.cols = f1.cols;
 
-    FloatMatrix fm;
-    fm.rows = output.size();
-    fm.cols = output[0].size();
-    fm.data = (float *) malloc(fm.rows * fm.cols * sizeof(float));
-    for (size_t i = 0; i < fm.rows; i++) {
-        for (size_t j = 0; j < fm.cols; j++) {
-            fm.data[i * fm.cols + j] = output[i][j];
-        }
+    } catch (const std::exception &e) {
+        set_last_error(e.what());
     }
     return fm;
 }
 
-char ** llama_embedder_get_metadata(size_t* size){
-    std::unordered_map<std::string, std::string> metadata;
-    get_metadata_f(embedder, metadata);
-    *size = metadata.size();
-    char** metadata_array = (char**)malloc(metadata.size() * sizeof(char*));
-    size_t i = 0;
-    for (const auto& pair : metadata) {
-        std::string entry = pair.first + "=" + pair.second;
-        metadata_array[i] = (char*)malloc((entry.size() + 1) * sizeof(char));
-        std::strcpy(metadata_array[i], entry.c_str());
-        i++;
+char** llama_embedder_get_metadata(size_t* size) {
+    MetadataPair* metadata_array = NULL;
+    char** metadata = NULL;
+    *size = 0;
+
+    if (get_metadata_f(embedder, &metadata_array, size) != 0 || metadata_array == NULL) {
+        fprintf(stderr, "Failed to get metadata\n");
+        return NULL;
     }
-    return metadata_array;
+
+    metadata = (char**)malloc(*size * sizeof(char*));
+    if (metadata == NULL) {
+        fprintf(stderr, "Failed to allocate memory for metadata\n");
+        free(metadata_array);
+        *size = 0;
+        return NULL;
+    }
+
+    for (size_t i = 0; i < *size; i++) {
+        if (metadata_array[i].key == NULL || metadata_array[i].value == NULL) {
+            fprintf(stderr, "Null key or value at index %zu\n", i);
+            continue;
+        }
+
+        size_t key_len = strlen(metadata_array[i].key);
+        size_t value_len = strlen(metadata_array[i].value);
+        metadata[i] = (char*)malloc(key_len + value_len + 2); // +2 for '=' and null terminator
+        if (metadata[i] == NULL) {
+            fprintf(stderr, "Failed to allocate memory for metadata[%zu]\n", i);
+            continue;
+        }
+
+        snprintf(metadata[i], key_len + value_len + 2, "%s=%s", metadata_array[i].key, metadata_array[i].value);
+
+    }
+    free_metadata_f(metadata_array, *size);
+
+    return metadata;
 }
 
 void free_metadata(char** metadata_array, size_t size) {
@@ -148,8 +180,13 @@ void free_metadata(char** metadata_array, size_t size) {
     free(metadata_array);
 }
 
-void free_float_matrix(FloatMatrix fm) {
-    free(fm.data);
+void free_float_matrixw(FloatMatrixW * fm) {
+    if (fm != nullptr){
+        if (fm->data != nullptr) {
+            free(fm->data);
+            fm->data = nullptr;
+        }
+    }
 }
 
 
