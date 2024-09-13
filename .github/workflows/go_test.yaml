@@ -1,0 +1,81 @@
+name: Go Test
+
+on:
+  workflow_dispatch: { }
+  pull_request:
+    paths:
+      - bindings/go/**
+      - src/**
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'bindings/go/go.mod'
+      - name: Go env print
+        run: go env
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: bindings/go
+          args: --verbose
+  build:
+    runs-on: ${{matrix.os}}
+    needs: [lint]
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'bindings/go/go.mod'
+      - name: Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.os == 'ubuntu-latest'
+      - name: Install Ninja
+        if: matrix.os == 'windows-latest'
+        id: install_ninja
+        run: |
+          choco install ninja
+      - name: Set Mac Env
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
+        run: |
+          echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+      - name: Set Linux Env
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+      - name: Set Windows Env
+        if: matrix.os == 'windows-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
+      - name: Build and Test
+        run: |
+          make go-test
+        env:
+          GTEST_COLOR: yes
+          GTEST_OUTPUT: xml:test_results.xml
+          SHARED_LIB_PATH: ${{ env.SHARED_LIB_PATH }}

@@ -51,6 +51,22 @@ EXPECT_EQ(output[0].size(), 384);
 free_embedder(embedder);
 }
 
+TEST(EmbedderTest, EmbedCWithModel) {
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+
+FloatMatrix output = embed_c(embedder, new const char*[]{"Hello, world!"}, 1, 2);
+EXPECT_NE(embedder, nullptr);
+EXPECT_NE(embedder->context, nullptr);
+EXPECT_NE(embedder->model, nullptr);
+EXPECT_EQ(output.rows, 1);
+EXPECT_EQ(output.cols, 384);
+
+free_float_matrix(&output);
+free_embedder(embedder);
+}
+
 TEST(EmbedderTest, EmbedWithModelNoTextsError) {
 const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
 uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
@@ -81,6 +97,26 @@ EXPECT_FALSE(metadata.empty()); // Check if the map is empty
 EXPECT_EQ(metadata["general.name"], "snowflake-arctic-embed-s");
 EXPECT_EQ(metadata["general.architecture"], "bert");
 
+free_embedder(embedder);
+}
+
+
+TEST(EmbedderTest, GetMetadataC) {
+const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
+uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
+llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
+
+MetadataPair *metadata_array = nullptr;
+size_t count = 0;
+
+int result = get_metadata_c(embedder, &metadata_array, &count);
+EXPECT_EQ(result, 0);
+
+EXPECT_NE(embedder, nullptr);
+EXPECT_NE(embedder->context, nullptr);
+EXPECT_NE(embedder->model, nullptr);
+
+free_metadata_c(metadata_array, count);
 free_embedder(embedder);
 }
 

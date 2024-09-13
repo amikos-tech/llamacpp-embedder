@@ -220,6 +220,43 @@ void tokenize(llama_embedder *embedder, const std::vector<std::string>& texts, s
     }
 }
 
+
+int get_metadata_c(llama_embedder * embedder, MetadataPair** pairs, size_t* count){
+    std::unordered_map<std::string, std::string> metadata;
+    get_metadata(embedder, metadata);
+    *count = metadata.size();
+    *pairs = (MetadataPair*)malloc(metadata.size() * sizeof(MetadataPair));
+    size_t i = 0;
+    for (const auto &pair : metadata) {
+        char* key_copy = strdup(pair.first.c_str());
+        char* value_copy = strdup(pair.second.c_str());
+
+        if (key_copy == nullptr || value_copy == nullptr) {
+            fprintf(stderr, "Failed to allocate memory for key or value at index %zu\n", i);
+            // Handle allocation failure
+            continue;
+        }
+
+        (*pairs)[i].key = key_copy;
+        (*pairs)[i].value = value_copy;
+
+        i++;
+    }
+    return 0;
+}
+
+void free_metadata_c(MetadataPair* metadata_array, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        if (metadata_array[i].key != nullptr) {
+            free((void *) metadata_array[i].key);
+        }
+        if (metadata_array[i].value != nullptr) {
+            free((void *) metadata_array[i].value);
+        }
+    }
+    free(metadata_array);
+}
+
 void get_metadata(llama_embedder *embedder, std::unordered_map<std::string, std::string> &output) {
     output = embedder->model_metadata;
 }
@@ -234,6 +271,36 @@ void free_embedder(llama_embedder *embedder) noexcept {
     }
     llama_backend_free();
     delete embedder;
+}
+
+FloatMatrix embed_c(llama_embedder * embedder, const char  ** texts,size_t  text_len, int32_t embd_norm){
+    std::vector<std::string> texts_inner;
+    texts_inner.reserve(text_len);
+for (size_t i = 0; i < text_len; i++) {
+        texts_inner.emplace_back(texts[i]);
+    }
+    std::vector<std::vector<float>> output;
+    embed(embedder, texts_inner, output, embd_norm);
+    FloatMatrix floatMatrix;
+    floatMatrix.rows = output.size();
+    floatMatrix.cols = output[0].size();
+    floatMatrix.data = (float *)malloc(floatMatrix.rows * floatMatrix.cols * sizeof(float));
+    for (size_t i = 0; i < floatMatrix.rows; i++) {
+        for (size_t j = 0; j < floatMatrix.cols; j++) {
+            floatMatrix.data[i * floatMatrix.cols + j] = output[i][j];
+        }
+    }
+    return floatMatrix;
+}
+
+void free_float_matrix(FloatMatrix * floatMatrix) {
+    if (floatMatrix!= nullptr) {
+        if (floatMatrix->data != nullptr) {
+            free(floatMatrix->data);
+            floatMatrix->data = nullptr;
+        }
+    }
+
 }
 
 // Creates embeddings from list of strings
@@ -256,15 +323,15 @@ void embed(llama_embedder *embedder, const std::vector<std::string> & texts, std
 
 
     // max batch size
-    const uint64_t n_batch = llama_n_batch(ctx);//params.n_batch;
+    const uint32_t n_batch = llama_n_batch(ctx);//params.n_batch;
     GGML_ASSERT(llama_n_batch(ctx) >= llama_n_ctx(ctx));
 
     // tokenize the prompts and trim
     std::vector<std::vector<int32_t>> inputs;
-    for (const auto &prompt: texts) {
-        std::vector<llama_tokenizer_data> output_token_data;
-        ::tokenize(embedder, {prompt}, output_token_data);
-        auto inp = output_token_data[0].tokens;
+    std::vector<llama_tokenizer_data> output_token_data;
+    ::tokenize(embedder, texts, output_token_data);
+    for (const auto &tokenizer_data : output_token_data) {
+        auto inp = tokenizer_data.tokens;
         if (inp.size() > n_batch) {
             fprintf(stderr,
                     "%s: error: number of tokens in input line (%lld) exceeds batch size (%lld), increase batch size and re-run\n",
@@ -285,11 +352,11 @@ void embed(llama_embedder *embedder, const std::vector<std::string> & texts, std
     }
 
     // initialize batch
-    const int n_prompts = texts.size();
-    struct llama_batch batch = llama_batch_init((long long int) n_batch, 0, 1);
+    const size_t n_prompts = texts.size();
+    struct llama_batch batch = llama_batch_init( (int32_t )n_batch, 0, 1);
 
     // count number of embeddings
-    int n_embd_count = 0;
+    size_t n_embd_count = 0;
     if (pooling_type == LLAMA_POOLING_TYPE_NONE) {
         for (int k = 0; k < n_prompts; k++) {
             n_embd_count += inputs[k].size();

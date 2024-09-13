@@ -1,0 +1,193 @@
+//
+// Created by Trayan Azarov on 13.09.24.
+//
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <iostream>
+#include <dlfcn.h>
+#include <stdexcept>
+#include "../../src/embedder.h"
+#include "wrapper.h"
+
+typedef llama_embedder * (*init_embedder_local_func)(const char *, uint32_t);
+typedef void (*free_embedder_local_func)(llama_embedder *);
+typedef FloatMatrix (*embed_c_local_func)(llama_embedder *, const char  ** , size_t , int32_t);
+typedef int (*get_metadata_c_local_func)(llama_embedder *,MetadataPair**, size_t*);
+typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
+
+void * libh = NULL;
+llama_embedder * embedder = NULL;
+init_embedder_local_func init_embedder_f = NULL;
+free_embedder_local_func free_embedder_f = NULL;
+embed_c_local_func embed_f = NULL;
+get_metadata_c_local_func get_metadata_f = NULL;
+free_metadata_c_local_func free_metadata_f = NULL;
+
+static std::string last_error;
+
+extern "C" {
+const char* get_last_error() {
+    return last_error.c_str();
+}
+
+void set_last_error(const char* error_message) {
+    last_error = error_message;
+}
+
+void * load_library(const char * shared_lib_path){
+    try {
+        libh = dlopen(shared_lib_path, RTLD_LAZY);
+        if (!libh) {
+            std::string error_message = "Failed to load shared library: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+        init_embedder_f = (llama_embedder *(*)(const char *, uint32_t)) dlsym(libh, "init_embedder");
+        if (!init_embedder_f) {
+            std::string error_message = "Failed to load init_embedder function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
+        free_embedder_f = (void (*)(llama_embedder *)) dlsym(libh, "free_embedder");
+
+        if (!free_embedder_f) {
+            std::string error_message = "Failed to load free_embedder function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
+        embed_f = (embed_c_local_func) dlsym(libh, "embed_c");
+
+        if (!embed_f) {
+            std::string error_message = "Failed to load embed function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
+        get_metadata_f = (get_metadata_c_local_func) dlsym(libh, "get_metadata_c");
+
+        if (!get_metadata_f) {
+            std::string error_message = "Failed to load get_metadata function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
+        free_metadata_f = (free_metadata_c_local_func) dlsym(libh, "free_metadata_c");
+
+        if (!free_metadata_f) {
+            std::string error_message = "Failed to load free_metadata function: " + std::string(dlerror());
+            throw std::runtime_error(error_message);
+        }
+
+
+        return libh;
+    } catch (const std::exception &e) {
+        std::string error_message = "Failed to load shared library: " + std::string(e.what());
+        set_last_error(error_message.c_str());
+        if (libh != NULL) {
+            dlclose(libh);
+        }
+        return NULL;
+    }
+}
+
+int init_llama_embedder(char * model_path, uint32_t pooling_type = 1 ) {
+    if (!libh) {
+        set_last_error("Shared library not loaded, use load_library first.");
+        return -1;
+    }
+    try {
+        embedder = init_embedder_f(model_path, pooling_type);
+        if (!embedder) {
+            throw std::runtime_error("Embedder not initialized properly.");
+        }
+    } catch (const std::exception &e) {
+        std::string error_message = "Failed to initialize embedder: " + std::string(e.what());
+        set_last_error(error_message.c_str());
+        return -1;
+    }
+    return 0;
+}
+
+void free_llama_embedder() {
+    if (embedder) {
+        free_embedder_f(embedder);
+    }
+    if (libh) {
+        dlclose(libh);
+    }
+}
+
+FloatMatrixW llama_embedder_embed(const char** texts, size_t text_count, int32_t norm) {
+    FloatMatrixW fm = {NULL, 0, 0};
+    try {
+        std::vector<std::vector<float>> output;
+        auto f1 = embed_f(embedder, texts, text_count, norm);
+        fm.data = f1.data;
+        fm.rows = f1.rows;
+        fm.cols = f1.cols;
+
+    } catch (const std::exception &e) {
+        set_last_error(e.what());
+    }
+    return fm;
+}
+
+char** llama_embedder_get_metadata(size_t* size) {
+    MetadataPair* metadata_array = NULL;
+    char** metadata = NULL;
+    *size = 0;
+
+    if (get_metadata_f(embedder, &metadata_array, size) != 0 || metadata_array == NULL) {
+        fprintf(stderr, "Failed to get metadata\n");
+        return NULL;
+    }
+
+    metadata = (char**)malloc(*size * sizeof(char*));
+    if (metadata == NULL) {
+        fprintf(stderr, "Failed to allocate memory for metadata\n");
+        free(metadata_array);
+        *size = 0;
+        return NULL;
+    }
+
+    for (size_t i = 0; i < *size; i++) {
+        if (metadata_array[i].key == NULL || metadata_array[i].value == NULL) {
+            fprintf(stderr, "Null key or value at index %zu\n", i);
+            continue;
+        }
+
+        size_t key_len = strlen(metadata_array[i].key);
+        size_t value_len = strlen(metadata_array[i].value);
+        metadata[i] = (char*)malloc(key_len + value_len + 2); // +2 for '=' and null terminator
+        if (metadata[i] == NULL) {
+            fprintf(stderr, "Failed to allocate memory for metadata[%zu]\n", i);
+            continue;
+        }
+
+        snprintf(metadata[i], key_len + value_len + 2, "%s=%s", metadata_array[i].key, metadata_array[i].value);
+
+    }
+    free_metadata_f(metadata_array, *size);
+
+    return metadata;
+}
+
+void free_metadata(char** metadata_array, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        free(metadata_array[i]);
+    }
+    free(metadata_array);
+}
+
+void free_float_matrixw(FloatMatrixW * fm) {
+    if (fm != nullptr){
+        if (fm->data != nullptr) {
+            free(fm->data);
+            fm->data = nullptr;
+        }
+    }
+}
+
+
+}
