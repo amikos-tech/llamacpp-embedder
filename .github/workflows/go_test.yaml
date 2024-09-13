@@ -21,11 +21,14 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: 'bindings/go/go.mod'
+      - name: Go env print
+        run: go env
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           working-directory: bindings/go
+          args: --verbose
   build:
     runs-on: ${{matrix.os}}
     needs: [lint]
@@ -33,7 +36,6 @@ jobs:
       matrix:
         os: [ ubuntu-latest ] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
     steps:
-
       - uses: actions/checkout@v4
         id: checkout
         with:
