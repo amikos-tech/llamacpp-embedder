@@ -1,7 +1,13 @@
 //
 // Created by Trayan Azarov on 13.09.24.
 //
-
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <stdexcept>
 #include "../../src/embedder.h"
 #include "wrapper.h"
 
