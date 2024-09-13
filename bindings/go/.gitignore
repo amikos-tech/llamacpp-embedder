@@ -1,0 +1,4 @@
+*.gguf
+cache/
+*.dylib
+*.so

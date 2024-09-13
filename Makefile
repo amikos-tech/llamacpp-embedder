@@ -38,6 +38,9 @@ python-test: python-dist
 python-clean:
 	rm -rf *.egg-info build dist
 
+go-test: lib-test
+	cd bindings/go && go test -v ./...
+
 ARCH := "${_PYTHON_HOST_PLATFORM}"
 IS_X86 = false
 ifeq ($(findstring x86_64,$(ARCH)),x86_64)
