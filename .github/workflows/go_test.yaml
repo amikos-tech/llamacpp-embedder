@@ -17,6 +17,8 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+      - name: Check go.mod file
+        run: ls -al bindings/go/
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
