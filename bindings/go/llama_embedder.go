@@ -2,9 +2,12 @@ package llama_embedder
 
 /*
 #cgo CFLAGS: -I.
-#cgo CXXFLAGS: -std=c++11
-#cgo !darwin LDFLAGS: -ldl -lstdc++
-#cgo darwin LDFLAGS: -ldl -lc++
+#cgo !clang, !darwin CXXFLAGS:  -I. -std=gnu++11
+#cgo darwin CXXFLAGS:  -I. -std=c++11 -stdlib=libc++
+#cgo clang CXXFLAGS:  -I. -std=c++11 -stdlib=libc++
+#cgo !clang, !darwin LDFLAGS: -ldl -lstdc++
+#cgo darwin LDFLAGS: -ldl -stdlib=libc++
+#cgo clang LDFLAGS: -ldl -stdlib=libc++
 #include <stdlib.h>
 #include "wrapper.h"
 
