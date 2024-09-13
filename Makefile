@@ -41,6 +41,14 @@ python-clean:
 go-test: lib-test
 	cd bindings/go && go test -v ./...
 
+.PHONY: lint
+go-lint:
+	cd bindings/go && golangci-lint run
+
+.PHONY: lint-fix
+go-lint-fix:
+	cd bindings/go && golangci-lint run --fix ./...
+
 ARCH := "${_PYTHON_HOST_PLATFORM}"
 IS_X86 = false
 ifeq ($(findstring x86_64,$(ARCH)),x86_64)

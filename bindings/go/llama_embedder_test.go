@@ -15,7 +15,7 @@ func TestLlamaEmbedder(t *testing.T) {
 	if sharedLibPath == "" {
 		sharedLibPath = "../../build/"
 	}
-	sharedLibFile := fmt.Sprintf("../../build/%s", getOSSharedLibName())
+	sharedLibFile := fmt.Sprintf("%s/%s", sharedLibPath, getOSSharedLibName())
 	err := downloadHFModel(defaultHFRepo, defaultModelFile, defaultModelFile, "")
 	require.NoError(t, err, "Failed to download model")
 	t.Cleanup(func() {

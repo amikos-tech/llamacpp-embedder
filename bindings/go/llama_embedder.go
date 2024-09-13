@@ -149,7 +149,7 @@ func (e *LlamaEmbedder) loadLibrary() error {
 	cLibPath := C.CString(e.sharedLibraryPath)
 	defer C.free(unsafe.Pointer(cLibPath))
 	if C.load_library(cLibPath) == nil {
-		return fmt.Errorf(C.GoString(C.get_last_error()))
+		return fmt.Errorf("%v", C.GoString(C.get_last_error()))
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func (e *LlamaEmbedder) initEmbedder() error {
 	cModelPath := C.CString(e.modelPath)
 	defer C.free(unsafe.Pointer(cModelPath))
 	if C.init_llama_embedder(cModelPath, C.uint32_t(uint32(e.defaultPoolingType))) != 0 {
-		return fmt.Errorf("Failed to initialize llama backend" + C.GoString(C.get_last_error()))
+		return fmt.Errorf("failed to initialize llama backend %v", C.GoString(C.get_last_error()))
 	}
 	return nil
 }

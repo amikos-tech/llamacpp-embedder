@@ -21,8 +21,10 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
+          working-directory: bindings/go
   build:
     runs-on: ${{matrix.os}}
+    needs: [lint]
     strategy:
       matrix:
         os: [ ubuntu-latest ] #, windows-latest, macos-latest, macos-14, ubuntu-latest,
