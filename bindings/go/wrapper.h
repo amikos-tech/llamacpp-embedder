@@ -4,23 +4,16 @@
 #ifndef WRAPPER_H
 #define WRAPPER_H
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(BUILDING_DLL)
-        #define EXPORT_SYMBOL __declspec(dllexport)
-    #else
-        #define EXPORT_SYMBOL __declspec(dllimport)
-    #endif
-#else
-#define EXPORT_SYMBOL __attribute__((visibility("default")))
-#endif
-#include <stdint.h>
-#include <stdbool.h>
-#if defined(_WIN32) || defined(_WIN64)
+#define EXPORT_SYMBOL __declspec(dllexport)
 #include <windows.h>
     typedef HMODULE lib_handle;
 #else
+#define EXPORT_SYMBOL __attribute__((visibility("default")))
 #include <dlfcn.h>
     typedef void* lib_handle;
 #endif
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 
