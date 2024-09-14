@@ -73,9 +73,10 @@ jobs:
           echo "CMAKE_BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
       - name: Set Windows Env
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_FLAGS=-j${env:NUMBER_OF_PROCESSORS}" >> $GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "SHARED_LIB_PATH=../../build/Release"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_BUILD_FLAGS=-j$env:NUMBER_OF_PROCESSORS"
       - name: Build and Test
         run: |
           make go-test

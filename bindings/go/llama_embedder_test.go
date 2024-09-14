@@ -13,9 +13,8 @@ const defaultModelFile = "all-MiniLM-L6-v2.Q4_0.gguf"
 
 func TestLlamaEmbedder(t *testing.T) {
 	sharedLibPath := os.Getenv("SHARED_LIB_PATH")
-	fmt.Printf("sharedLibPath: %s\n", sharedLibPath)
 	if sharedLibPath == "" {
-		t.Errorf("SHARED_LIB_PATH is not set")
+		sharedLibPath = "../../build/"
 	}
 	sharedLibFile := filepath.Join(sharedLibPath, getOSSharedLibName())
 	err := downloadHFModel(defaultHFRepo, defaultModelFile, defaultModelFile, "")
