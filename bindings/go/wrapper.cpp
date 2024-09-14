@@ -208,14 +208,16 @@ int init_llama_embedder(char * model_path, uint32_t pooling_type ) {
 }
 
 void free_llama_embedder() {
-    if (embedder) {
+    if (embedder != nullptr) {
         free_embedder_f(embedder);
     }
     if (libh != nullptr) {
 #if defined(_WIN32) || defined(_WIN64)
+        fprintf(stderr, "Freeing library under win\n");
         if (!FreeLibrary(libh)){
             fprintf(stderr, "Failed to free library %lu\n", GetLastError());
         }
+        frprintf(stderr, "FREEED library under win\n");
 #else
         if(dlclose(libh) != 0){
             fprintf(stderr, "Failed to close library %s\n", dlerror());
