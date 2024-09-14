@@ -39,8 +39,7 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          cp LICENSE ./build/bin/
-          zip -r llama-embedder-${{ inputs.tag }}-ubuntu-x64.zip ./build/bin/llama-embedder.*
+          zip llama-embedder-${{ inputs.tag }}-ubuntu-x64.zip ./build/bin/llama-embedder.* ./LICENSE.md ./vendor/llama.cpp/LICENSE
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -49,7 +48,7 @@ jobs:
           name: llama-embedder-ubuntu-x64.zip
 
   ubuntu-latest-cmake-arm64:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04
     steps:
       - name: Clone
         id: checkout
@@ -77,8 +76,7 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          cp LICENSE ./build/bin/
-          zip -r llama-embedder-${{ inputs.tag }}-ubuntu-arm64.zip ./build/bin/llama-embedder.*
+          zip llama-embedder-${{ inputs.tag }}-ubuntu-arm64.zip ./build/llama-embedder.* ./LICENSE.md ./vendor/llama.cpp/LICENSE
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

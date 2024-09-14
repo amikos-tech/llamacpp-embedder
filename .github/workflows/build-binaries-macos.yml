@@ -41,8 +41,7 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          cp LICENSE ./build/bin/
-          zip -r llama-embedder-${{ inputs.tag }}-macos-arm64.zip ./build/libllama-embedder.*
+          zip llama-embedder-${{ inputs.tag }}-macos-arm64.zip ./build/libllama-embedder.* ./LICENSE.md ./vendor/llama.cpp/LICENSE
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -84,8 +83,7 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          cp LICENSE ./build/bin/
-          zip -r llama-embedder-${{ inputs.tag }}-macos-x64.zip ./build/llama-embedder.*
+          zip llama-embedder-${{ inputs.tag }}-macos-x64.zip ./build/llama-embedder.* ./LICENSE.md ./vendor/llama.cpp/LICENSE
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
