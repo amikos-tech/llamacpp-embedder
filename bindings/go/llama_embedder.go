@@ -305,7 +305,7 @@ func getOSSharedLibName() string {
 	case "darwin":
 		return "libllama-embedder.dylib"
 	case "windows":
-		return "libllama-embedder.dll"
+		return "llama-embedder.dll"
 	default:
 		return "libllama-embedder.so"
 	}
