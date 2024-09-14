@@ -14,7 +14,7 @@ jobs:
 
   go-test:
     name: Lint and Test Go Binding
-    uses: ./.github/workflows/go-test.yml@main
+    uses: ./.github/workflows/go-test.yml
 
   tag:
     needs: [ go-test ]
@@ -38,20 +38,20 @@ jobs:
   build-linux-binaries:
     name: Build Linux Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-linux.yml@main
+    uses: ./.github/workflows/build-binaries-linux.yml
     with:
       tag: ${{ needs.tag.outputs.tag }}
 
   build-macos-binaries:
     name: Build MacOS Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-macos.yml@main
+    uses: ./.github/workflows/build-binaries-macos.yml
     with:
       tag: ${{ needs.tag.outputs.tag }}
 
   build-windows-binaries:
     name: Build Windows Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-windows.yml@main
+    uses: ./.github/workflows/build-binaries-windows.yml
     with:
       tag: ${{ needs.tag.outputs.tag }}
