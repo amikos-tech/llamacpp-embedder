@@ -41,21 +41,25 @@ std::string GetLastErrorAsString() {
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-
-typedef llama_embedder * (__cdecl *init_embedder_local_func)(const char *, uint32_t);
-typedef void (__cdecl *free_embedder_local_func)(llama_embedder *);
-typedef FloatMatrix (__cdecl *embed_c_local_func)(llama_embedder *, const char  ** , size_t , int32_t);
-typedef int (__cdecl *get_metadata_c_local_func)(llama_embedder *,MetadataPair**, size_t*);
-typedef void (__cdecl *free_metadata_c_local_func)(MetadataPair*, size_t);
-
+#if defined(_WIN64)
+        typedef llama_embedder* (*init_embedder_local_func)(const char*, uint32_t);
+        typedef void (*free_embedder_local_func)(llama_embedder*);
+        typedef FloatMatrix (*embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+        typedef int (*get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+        typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
+    #else
+        typedef llama_embedder* (__cdecl *init_embedder_local_func)(const char*, uint32_t);
+        typedef void (__cdecl *free_embedder_local_func)(llama_embedder*);
+        typedef FloatMatrix (__cdecl *embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+        typedef int (__cdecl *get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+        typedef void (__cdecl *free_metadata_c_local_func)(MetadataPair*, size_t);
+    #endif
 #else
-
-typedef llama_embedder * (*init_embedder_local_func)(const char *, uint32_t);
-typedef void (*free_embedder_local_func)(llama_embedder *);
-typedef FloatMatrix (*embed_c_local_func)(llama_embedder *, const char  ** , size_t , int32_t);
-typedef int (*get_metadata_c_local_func)(llama_embedder *,MetadataPair**, size_t*);
-typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
-
+    typedef llama_embedder* (*init_embedder_local_func)(const char*, uint32_t);
+    typedef void (*free_embedder_local_func)(llama_embedder*);
+    typedef FloatMatrix (*embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+    typedef int (*get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+    typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
 #endif
 
 
