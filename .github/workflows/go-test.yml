@@ -86,3 +86,8 @@ jobs:
           SHARED_LIB_PATH: ${{ env.SHARED_LIB_PATH }}
           CMAKE_FLAGS: ${{ env.CMAKE_FLAGS }}
           CMAKE_BUILD_FLAGS: ${{ env.CMAKE_BUILD_FLAGS }}
+      - name: Setup tmate session
+        if: always() && matrix.os == 'windows-latest'
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
