@@ -1,3 +1,5 @@
+name: Release Go Binding
+
 on:
   push:
     tags:
@@ -12,9 +14,10 @@ jobs:
 
   go-test:
     name: Lint and Test Go Binding
-    uses: ./.github/workflows/go-test.yml
+    uses: ./.github/workflows/go-test.yml@main
 
   tag:
+    needs: [ go-test ]
     runs-on: ubuntu-latest
     name: Get Tag
     steps:
@@ -35,20 +38,20 @@ jobs:
   build-linux-binaries:
     name: Build Linux Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-linux.yml
+    uses: ./.github/workflows/build-binaries-linux.yml@main
     with:
       tag: ${{ needs.tag.outputs.tag }}
 
   build-macos-binaries:
     name: Build MacOS Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-macos.yml
+    uses: ./.github/workflows/build-binaries-macos.yml@main
     with:
       tag: ${{ needs.tag.outputs.tag }}
 
   build-windows-binaries:
     name: Build Windows Binaries
     needs: [ go-test , tag ]
-    uses: ./.github/workflows/build-binaries-windows.yml
+    uses: ./.github/workflows/build-binaries-windows.yml@main
     with:
       tag: ${{ needs.tag.outputs.tag }}
