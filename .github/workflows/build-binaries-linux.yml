@@ -1,0 +1,87 @@
+name: Build Linux Binaries
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
+        type: string
+
+jobs:
+  ubuntu-latest-cmake-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Dependencies
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+
+      - name: Build and Test
+        id: cmake_build
+        run: |
+          export CMAKE_BUILD_FLAGS="-j $(nproc)"
+          make lib-test
+
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        run: |
+          cp LICENSE ./build/bin/
+          zip -r llama-embedder-${{ inputs.tag }}-ubuntu-x64.zip ./build/bin/llama-embedder.*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: llama-embedder-${{ inputs.tag }}-ubuntu-x64.zip
+          name: llama-embedder-ubuntu-x64.zip
+
+  ubuntu-latest-cmake-arm64:
+    runs-on: ubuntu-latest-arm64
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Dependencies
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+
+      - name: Build and Test
+        id: cmake_build
+        run: |
+          export CMAKE_BUILD_FLAGS="-j $(nproc)"
+          make lib-test
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        run: |
+          cp LICENSE ./build/bin/
+          zip -r llama-embedder-${{ inputs.tag }}-ubuntu-arm64.zip ./build/bin/llama-embedder.*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: llama-embedder-${{ inputs.tag }}-ubuntu-arm64.zip
+          name: llama-embedder-ubuntu-arm64.zip
