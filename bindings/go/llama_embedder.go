@@ -3,9 +3,11 @@ package llama_embedder
 /*
 #cgo CFLAGS: -I.
 #cgo CXXFLAGS: -I. -std=c++11 -Wall -Wextra -pedantic
-#cgo !clang, !darwin LDFLAGS: -ldl -lstdc++
-#cgo darwin LDFLAGS: -ldl -stdlib=libc++
-#cgo clang LDFLAGS: -ldl -stdlib=libc++
+
+#cgo darwin LDFLAGS: -stdlib=libc++
+#cgo linux !clang LDFLAGS: -ldl -lstdc++
+#cgo linux clang LDFLAGS: -ldl -stdlib=libc++
+#cgo windows LDFLAGS: -lkernel32
 #include <stdlib.h>
 #include "wrapper.h"
 
