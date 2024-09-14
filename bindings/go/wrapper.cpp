@@ -70,7 +70,7 @@ lib_handle load_library(const char * shared_lib_path){
 #if defined(_WIN32) || defined(_WIN64)
         libh = LoadLibraryA(shared_lib_path);
         if (!libh) {
-            std::string error_message = "Failed to load shared library: " + GetLastErrorAsString());
+            std::string error_message = "Failed to load shared library: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
