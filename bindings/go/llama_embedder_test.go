@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -12,10 +13,11 @@ const defaultModelFile = "all-MiniLM-L6-v2.Q4_0.gguf"
 
 func TestLlamaEmbedder(t *testing.T) {
 	sharedLibPath := os.Getenv("SHARED_LIB_PATH")
+	fmt.Printf("sharedLibPath: %s\n", sharedLibPath)
 	if sharedLibPath == "" {
-		sharedLibPath = "../../build/"
+		t.Errorf("SHARED_LIB_PATH is not set")
 	}
-	sharedLibFile := fmt.Sprintf("%s/%s", sharedLibPath, getOSSharedLibName())
+	sharedLibFile := filepath.Join(sharedLibPath, getOSSharedLibName())
 	err := downloadHFModel(defaultHFRepo, defaultModelFile, defaultModelFile, "")
 	require.NoError(t, err, "Failed to download model")
 	t.Cleanup(func() {
