@@ -36,17 +36,24 @@ jobs:
         id: install_ninja
         run: |
           choco install ninja
+      - name: Set Linux flags
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "CMAKE_BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
       - name: Set Mac flags
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
         run: |
           echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j$(sysctl -n hw.logicalcpu)" >> $GITHUB_ENV
       - name: Set Windows Env
         if: matrix.os == 'windows-latest'
         run: |
           echo "SHARED_LIB_PATH=../../build/Release" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j${env:NUMBER_OF_PROCESSORS}" >> $GITHUB_ENV
       - name: Build and Test
         run: |
           make lib-test
         env:
           GTEST_COLOR: yes
           GTEST_OUTPUT: xml:test_results.xml
+          CMAKE_BUILD_FLAGS: ${{ env.CMAKE_BUILD_FLAGS }}

@@ -1,0 +1,54 @@
+on:
+  push:
+    tags:
+      - 'go-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
+        default: 'go-v0.0.0'
+jobs:
+
+  go-test:
+    name: Lint and Test Go Binding
+    uses: ./.github/workflows/go-test.yml
+
+  tag:
+    runs-on: ubuntu-latest
+    name: Get Tag
+    steps:
+      - name: Get Tag
+        id: tag
+        shell: bash
+        run: |
+          # Extract the tag name from GITHUB_REF
+          FULL_TAG=${GITHUB_REF#refs/tags/}
+          echo "Full tag: $FULL_TAG"
+          # Remove the 'go-' prefix
+          STRIPPED_TAG=${FULL_TAG#go-}
+          echo "Stripped tag: $STRIPPED_TAG"
+
+          # Set the output variable
+          echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+
+  build-linux-binaries:
+    name: Build Linux Binaries
+    needs: [ go-test , tag ]
+    uses: ./.github/workflows/build-binaries-linux.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+
+  build-macos-binaries:
+    name: Build MacOS Binaries
+    needs: [ go-test , tag ]
+    uses: ./.github/workflows/build-binaries-macos.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+
+  build-windows-binaries:
+    name: Build Windows Binaries
+    needs: [ go-test , tag ]
+    uses: ./.github/workflows/build-binaries-windows.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
