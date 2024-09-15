@@ -55,10 +55,10 @@ jobs:
           copy .\LICENSE.md artifact-pack\LICENSE.md
           copy .\vendor\llama.cpp\LICENSE artifact-pack\LICENSE-llama.cpp
           cd artifact-pack
-          7z a llama-embedder-${{ inputs.tag }}-win-${{ matrix.build }}.zip *
+          7z a llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: llama-embedder-${{ inputs.tag }}-win-${{ matrix.build }}.zip
-          name: llama-embedder-win-${{ matrix.build }}.zip
+          path: llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip
+          name: llama-embedder-win-${{ matrix.build }}

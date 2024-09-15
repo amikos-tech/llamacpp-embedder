@@ -83,26 +83,25 @@ jobs:
     with:
       tag: ${{ needs.tag-job.outputs.tag }}
 
-#  build-macos-binaries:
-#    name: Build MacOS Binaries
-##    needs: [ go-test , tag-job ]
-#    needs: [ tag-job ]
-#    uses: ./.github/workflows/build-binaries-macos.yml
-#    with:
-#      tag: ${{ needs.tag-job.outputs.tag }}
+  build-macos-binaries:
+    name: Build MacOS Binaries
+#    needs: [ go-test , tag-job ]
+    needs: [ tag-job ]
+    uses: ./.github/workflows/build-binaries-macos.yml
+    with:
+      tag: ${{ needs.tag-job.outputs.tag }}
 
-#  build-windows-binaries:
-#    name: Build Windows Binaries
-##    needs: [ go-test , tag-job ]
-#    needs: [ tag-job ]
-#    uses: ./.github/workflows/build-binaries-windows.yml
-#    with:
-#      tag: ${{ needs.tag-job.outputs.tag }}
+  build-windows-binaries:
+    name: Build Windows Binaries
+#    needs: [ go-test , tag-job ]
+    needs: [ tag-job ]
+    uses: ./.github/workflows/build-binaries-windows.yml
+    with:
+      tag: ${{ needs.tag-job.outputs.tag }}
 
   release:
     name: Create Go Release
-#    needs: [ build-linux-binaries, build-macos-binaries, build-windows-binaries ]
-    needs: [ build-linux-binaries, tag-job ]
+    needs: [ build-linux-binaries, build-macos-binaries, build-windows-binaries, tag-job ]
     runs-on: ubuntu-latest
     steps:
       - name: Clone
@@ -122,7 +121,7 @@ jobs:
         id: move_artifacts
         run: |
           set -e
-          mkdir -p ./artifact/release && mv ./artifact/*.zip ./artifact/release
+          mkdir -p ./artifact/release && mv ./artifact/*/*.zip ./artifact/release
           ls -latr ./artifact/release
         shell: bash
 
