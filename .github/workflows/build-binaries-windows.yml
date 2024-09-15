@@ -10,17 +10,18 @@ on:
 
 jobs:
   windows-latest-cmake:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     strategy:
       matrix:
         include:
           - build: 'noavx-x64'
             defines: ''
-          - build: 'llvm-arm64'
-            defines: '-G "Ninja Multi-Config"'
-          - build: 'msvc-arm64'
-            defines: '-G "Ninja Multi-Config"'
+# TODO: Add support for ARM64 as part of #63
+#          - build: 'llvm-arm64'
+#            defines: '-G "Ninja Multi-Config" -D CMAKE_TOOLCHAIN_FILE=vendor/llama.cpp/cmake/arm64-windows-llvm.cmake'
+#          - build: 'msvc-arm64'
+#            defines: '-G "Ninja Multi-Config" -D CMAKE_TOOLCHAIN_FILE=vendor/llama.cpp/cmake/arm64-windows-msvc.cmake'
 
     steps:
       - name: Clone
@@ -42,9 +43,8 @@ jobs:
       - name: Build and Test
         id: cmake_build
         run: |
-          $env:CMAKE_FLAGS = "-S . -B build ${{ matrix.defines }}"
+          $env:CMAKE_FLAGS = '-S . ${{ matrix.defines }}'
           $env:CMAKE_BUILD_FLAGS = "-j $env:NUMBER_OF_PROCESSORS"
-          $env:CMAKE_FLAGS = $env:CMAKE_FLAGS -replace '"', '\"'
           make lib-test
 
       - name: Pack artifacts
