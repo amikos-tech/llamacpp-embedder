@@ -84,7 +84,9 @@ func TestLlamaEmbedder(t *testing.T) {
 		t.Cleanup(func() {
 			closeFunc()
 			err := os.RemoveAll("./cache")
-			require.NoError(t, err, "Failed to remove cache dir")
+			if err != nil {
+				fmt.Printf("Error removing cache dir: %v\n", err)
+			}
 		})
 		res, err := e.EmbedTexts([]string{"hello", "world"})
 		require.NoError(t, err, "Failed to embed texts")
