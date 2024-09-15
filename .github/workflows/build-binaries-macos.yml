@@ -37,6 +37,8 @@ jobs:
           sysctl -a
           make lib-test
 
+      - name: Remove quarantine attribute
+        run: xattr -d com.apple.quarantine ./build/libllama-embedder.dylib
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -83,6 +85,9 @@ jobs:
           # Metal is disabled due to intermittent failures with Github runners not having a GPU:
           # https://github.com/ggerganov/llama.cpp/actions/runs/8635935781/job/23674807267#step:5:2313
           make lib-test
+
+      - name: Remove quarantine attribute
+        run: xattr -d com.apple.quarantine ./build/libllama-embedder.dylib
 
       - name: Pack artifacts
         id: pack_artifacts
