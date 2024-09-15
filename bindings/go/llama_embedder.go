@@ -14,11 +14,8 @@ package llama_embedder
 import "C"
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -28,29 +25,37 @@ type NormalizationType int32
 type PoolingType int32
 
 const (
-	NORMALIZATION_NONE          NormalizationType = -1
-	NORMALIZATION_MAX_ABS_INT16 NormalizationType = 0
-	NORMALIZATION_TAXICAB       NormalizationType = 1
-	NORMALIZATION_L2            NormalizationType = 2
-	POOLING_NONE                PoolingType       = 0
-	POOLING_MEAN                PoolingType       = 1
-	POOLING_CLS                 PoolingType       = 2
-	POOLING_LAST                PoolingType       = 3
+	NormalizationNone        NormalizationType = -1
+	NormalizationMaxAbsInt16 NormalizationType = 0
+	NormalizationTaxicab     NormalizationType = 1
+	NormalizationL2          NormalizationType = 2
+	PoolingNone              PoolingType       = 0
+	PoolingMean              PoolingType       = 1
+	PoolingCls               PoolingType       = 2
+	PoolingLast              PoolingType       = 3
+	LatestSharedLibVersion                     = "v0.0.8"
 )
 
 type LlamaEmbedder struct {
-	modelPath                string
-	sharedLibraryPath        string
-	defaultNormalizationType NormalizationType
-	defaultPoolingType       PoolingType
-	hfRepo                   string
-	localCacheDir            string
+	modelPath                    string
+	sharedLibraryPath            string
+	defaultNormalizationType     NormalizationType
+	defaultPoolingType           PoolingType
+	hfRepo                       string
+	localCacheDir                string
+	sharedLibraryVersion         string
+	sharedLibPathUserProvided    bool
+	sharedLibVersionUserProvided bool
 }
 
 type Option func(*LlamaEmbedder) error
 
-var DefaultCacheDir = filepath.Join(os.Getenv("HOME"), ".cache/llama_cache")
+var defaultCacheDir = filepath.Join(os.Getenv("HOME"), ".cache/llama_cache")
+var defaultModelCacheDir = filepath.Join(defaultCacheDir, "models")
+var defaultLibCacheDir = filepath.Join(defaultCacheDir, "libs")
 
+// WithNormalization sets the normalization type to use
+// Possible values are NormalizationNone, NormalizationMaxAbsInt16, NormalizationTaxicab, NormalizationL2 (default)
 func WithNormalization(norm NormalizationType) Option {
 	return func(e *LlamaEmbedder) error {
 		e.defaultNormalizationType = norm
@@ -58,6 +63,8 @@ func WithNormalization(norm NormalizationType) Option {
 	}
 }
 
+// WithPooling sets the pooling type to use
+// Possible values are PoolingNone, PoolingMean (default), PoolingCls, PoolingLast
 func WithPooling(pool PoolingType) Option {
 	return func(e *LlamaEmbedder) error {
 		e.defaultPoolingType = pool
@@ -65,6 +72,7 @@ func WithPooling(pool PoolingType) Option {
 	}
 }
 
+// WithHFRepo sets the Hugging Face repo to download the model from
 func WithHFRepo(repo string) Option {
 	return func(e *LlamaEmbedder) error {
 		if repo == "" {
@@ -75,17 +83,18 @@ func WithHFRepo(repo string) Option {
 	}
 }
 
-func WithModelCacheDir(dir string) Option {
+// WithModelCacheDir sets the directory to cache the model. If the directory does not exist, it will be created.
+func WithModelCacheDir(modelCacheDir string) Option {
 	return func(e *LlamaEmbedder) error {
-		if dir == "" {
-			return fmt.Errorf("Model cache dir is empty")
+		if modelCacheDir == "" {
+			return fmt.Errorf("model cache is not set")
 		}
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		if _, err := os.Stat(modelCacheDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(modelCacheDir, os.ModePerm); err != nil {
 				return err
 			}
 		}
-		absDir, err := filepath.Abs(dir)
+		absDir, err := filepath.Abs(modelCacheDir)
 		if err != nil {
 			return err
 		}
@@ -94,30 +103,59 @@ func WithModelCacheDir(dir string) Option {
 	}
 }
 
-var defaults = []Option{
-	WithNormalization(NORMALIZATION_L2),
-	WithPooling(POOLING_MEAN),
-	WithModelCacheDir(DefaultCacheDir),
+// WithSharedLibraryVersion sets the shared library version to use. This is overridden by WithSharedLibraryPath
+func WithSharedLibraryVersion(version string) Option {
+	return func(e *LlamaEmbedder) error {
+		if version == "" {
+			return fmt.Errorf("shared library version is empty")
+		}
+		// TODO make the check more robust - latest or valid vX.Y.Z(-rcN/-alphaN/-betaN)
+		e.sharedLibVersionUserProvided = true
+		e.sharedLibraryVersion = version
+		return nil
+	}
 }
 
-func NewLlamaEmbedder(sharedLibraryPath string, modelPath string, opts ...Option) (*LlamaEmbedder, func(), error) {
-	e := &LlamaEmbedder{sharedLibraryPath: sharedLibraryPath}
+// WithSharedLibraryPath sets the shared library path to use. LlamaEmbedder will look for shared library under this path.
+// This overrides WithSharedLibraryVersion.
+func WithSharedLibraryPath(libPath string) Option {
+	return func(e *LlamaEmbedder) error {
+		if libPath == "" {
+			return fmt.Errorf("shared library path is not provided")
+		}
+		expandedPath, err := expandTilde(libPath)
+		if err != nil {
+			return err
+		}
+		if _, err := os.Stat(expandedPath); os.IsNotExist(err) {
+			return fmt.Errorf("shared library path does not exist: %v", err)
+		}
+		e.sharedLibPathUserProvided = true
+		e.sharedLibraryPath = expandedPath
+		return nil
+	}
+}
 
-	for _, opt := range append(defaults, opts...) {
+func NewLlamaEmbedder(modelPath string, opts ...Option) (*LlamaEmbedder, func(), error) {
+	e := &LlamaEmbedder{
+		defaultNormalizationType: NormalizationL2,
+		defaultPoolingType:       PoolingMean,
+		localCacheDir:            defaultModelCacheDir,
+		sharedLibraryPath:        filepath.Join(defaultLibCacheDir, LatestSharedLibVersion),
+		sharedLibraryVersion:     LatestSharedLibVersion,
+	}
+	for _, opt := range opts {
 		err := opt(e)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	if sharedLibraryPath == "" {
-		return nil, nil, fmt.Errorf("sharedLibraryPath is not set")
-	}
-
-	if _, err := os.Stat(sharedLibraryPath); os.IsNotExist(err) {
-		return nil, nil, err
-	}
 	if modelPath == "" {
 		return nil, nil, fmt.Errorf("modelPath is not set")
+	}
+	err := ensureCacheDir()
+	if err != nil {
+		return nil, nil, err
 	}
 	if e.hfRepo != "" {
 		e.modelPath = filepath.Join(e.localCacheDir, filepath.Base(modelPath))
@@ -131,7 +169,7 @@ func NewLlamaEmbedder(sharedLibraryPath string, modelPath string, opts ...Option
 		}
 		e.modelPath = modelPath
 	}
-	err := e.loadLibrary()
+	err = e.loadLibrary()
 	freeFunc := func() {
 		e.Close()
 	}
@@ -147,9 +185,27 @@ func NewLlamaEmbedder(sharedLibraryPath string, modelPath string, opts ...Option
 	return e, freeFunc, nil
 }
 
-// loadLibrary loads the shared library
-func (e *LlamaEmbedder) loadLibrary() error {
-	cLibPath := C.CString(e.sharedLibraryPath)
+// loadLibrary loads the shared library.
+// The method will first check if the user has provided a shared library path, then version and finally download the latest version.
+func (e *LlamaEmbedder) loadLibrary() (err error) {
+	var actualPath string
+	if e.sharedLibPathUserProvided {
+		actualPath = filepath.Join(e.sharedLibraryPath, getOSSharedLibName())
+	} else if e.sharedLibVersionUserProvided {
+		actualPath, err = ensureLibrary(e.sharedLibraryVersion)
+		if err != nil {
+			return
+		}
+	} else {
+		actualPath, err = ensureLibrary(LatestSharedLibVersion)
+		if err != nil {
+			return
+		}
+	}
+	if _, err := os.Stat(actualPath); os.IsNotExist(err) {
+		return fmt.Errorf("shared library not found: %v", err)
+	}
+	cLibPath := C.CString(actualPath)
 	defer C.free(unsafe.Pointer(cLibPath))
 	if C.load_library(cLibPath) == nil {
 		return fmt.Errorf("%v", C.GoString(C.get_last_error()))
@@ -184,7 +240,7 @@ func (e *LlamaEmbedder) EmbedTexts(texts []string) ([][]float32, error) {
 			C.free(unsafe.Pointer(t))
 		}
 	}()
-	result := (C.FloatMatrixW)(C.llama_embedder_embed((**C.char)(unsafe.Pointer(&cTexts[0])), C.size_t(len(texts)), C.int32_t(int32(e.defaultNormalizationType))))
+	result := C.llama_embedder_embed((**C.char)(unsafe.Pointer(&cTexts[0])), C.size_t(len(texts)), C.int32_t(int32(e.defaultNormalizationType)))
 	defer func() {
 		C.free_float_matrixw(&result)
 	}()
@@ -219,94 +275,4 @@ func (e *LlamaEmbedder) GetMetadata() map[string]string {
 		}
 	}
 	return metadata
-}
-
-func downloadHFModel(hfRepo, hfFile, targetLocation, hfToken string) error {
-	if _, err := os.Stat(targetLocation); err == nil {
-		return nil
-	}
-	client := &http.Client{}
-
-	url := fmt.Sprintf("https://huggingface.co/%s/resolve/main/%s", hfRepo, hfFile)
-
-	// Create HTTP GET request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-
-	// Set Authorization header if HF_TOKEN is provided
-	if hfToken != "" {
-		req.Header.Set("Authorization", "Bearer "+hfToken)
-	}
-
-	// Execute the request
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Check for HTTP errors
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP error: %s", resp.Status)
-	}
-
-	// Extract filename from URL
-	segments := strings.Split(url, "/")
-	filename := segments[len(segments)-1]
-	if filename == "" {
-		filename = "model.gguf"
-	}
-
-	var outputPath string
-
-	// Determine the output path based on targetLocation
-	if targetLocation != "" {
-		// Check if targetLocation is a directory
-		info, err := os.Stat(targetLocation)
-		if err == nil && info.IsDir() {
-			// targetLocation is an existing directory
-			outputPath = filepath.Join(targetLocation, filename)
-		} else if os.IsNotExist(err) && strings.HasSuffix(targetLocation, string(os.PathSeparator)) {
-			// targetLocation is a non-existing directory (ends with / or \)
-			if err := os.MkdirAll(targetLocation, os.ModePerm); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-			outputPath = filepath.Join(targetLocation, filename)
-		} else {
-			// targetLocation is a file path
-			outputDir := filepath.Dir(targetLocation)
-			// Create the directory if it doesn't exist
-			if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-			outputPath = targetLocation
-		}
-	} else {
-		// No targetLocation provided, use current directory
-		outputPath = filename
-	}
-
-	// Create the output file
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	// Write response body to file
-	_, err = io.Copy(outFile, resp.Body)
-	return err
-}
-
-func getOSSharedLibName() string {
-	switch cos := strings.ToLower(runtime.GOOS); cos {
-	case "darwin":
-		return "libllama-embedder.dylib"
-	case "windows":
-		return "llama-embedder.dll"
-	default:
-		return "libllama-embedder.so"
-	}
 }
