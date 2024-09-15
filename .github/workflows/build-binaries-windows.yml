@@ -17,6 +17,7 @@ jobs:
         include:
           - build: 'noavx-x64'
             defines: ''
+# TODO: Add support for ARM64 as part of #63
 #          - build: 'llvm-arm64'
 #            defines: '-G "Ninja Multi-Config" -D CMAKE_TOOLCHAIN_FILE=vendor/llama.cpp/cmake/arm64-windows-llvm.cmake'
 #          - build: 'msvc-arm64'
