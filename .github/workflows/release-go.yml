@@ -71,6 +71,7 @@ jobs:
           fi
           echo "Tag: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "test=1231test" >> $GITHUB_OUTPUT
         shell: bash
   post-tag:
     runs-on: ubuntu-latest
@@ -80,6 +81,7 @@ jobs:
         id: get_tag
         run: |
           echo "Tag: ${{ needs.tag.outputs.tag }}"
+          echo "test: ${{ needs.tag.outputs.test }}"
 #
 #  build-linux-binaries:
 #    name: Build Linux Binaries
