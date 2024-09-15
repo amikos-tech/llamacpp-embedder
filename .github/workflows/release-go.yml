@@ -21,8 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Get Tag
     steps:
-      - name: Get Tag
+      - name: Get Tag From Ref
         id: tag
+        if : github.event_name == 'push'
         shell: bash
         run: |
           # Extract the tag name from GITHUB_REF
@@ -34,6 +35,13 @@ jobs:
 
           # Set the output variable
           echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get Tag From Input
+        id: tag
+        if : github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
 
   build-linux-binaries:
     name: Build Linux Binaries
