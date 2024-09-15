@@ -37,7 +37,7 @@ jobs:
           STRIPPED_TAG=${FULL_TAG#go-}
           echo "Stripped tag: $STRIPPED_TAG"
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+          echo "tag=$STRIPPED_TAG" >> $GITHUB_ENV
 
       - name: Get Tag From Input
         id: tag-input
@@ -58,7 +58,7 @@ jobs:
           fi
           
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+          echo "tag=$STRIPPED_TAG" >> $GITHUB_ENV
       
 
       - name: Output tag
@@ -70,7 +70,7 @@ jobs:
             TAG=${{ steps.tag-input.outputs.tag }}
           fi
           echo "Tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_ENV
         shell: bash
   post-tag:
     runs-on: ubuntu-latest
