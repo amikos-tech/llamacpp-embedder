@@ -34,7 +34,7 @@ func ensureLibrary(libraryVersion string) (string, error) {
 			carch = "x64"
 		}
 	} else if runtime.GOOS == "windows" {
-		cos = "win"
+		cos = "win-noavx"
 		carch = "x64"
 		libArchiveExt = "zip"
 	} else {
