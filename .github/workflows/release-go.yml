@@ -3,7 +3,10 @@ name: Release Go Binding
 on:
   push:
     tags:
-      - 'go-v*.*.*'
+      - 'go-v[0-9]+.[0-9]+.[0-9]+'
+      - 'go-v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+      - 'go-v[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
+      - 'go-v[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
   workflow_dispatch:
     inputs:
       tag:
@@ -26,6 +29,7 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
+          set -e
           # Extract the tag name from GITHUB_REF
           FULL_TAG=${GITHUB_REF#refs/tags/}
           echo "Full tag: $FULL_TAG"
@@ -40,11 +44,19 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
+          set -e
           FULL_TAG=${{ github.event.inputs.tag }}
           echo "Full tag: $FULL_TAG"
           # Remove the 'go-' prefix
           STRIPPED_TAG=${FULL_TAG#go-}
           echo "Stripped tag: $STRIPPED_TAG"
+          
+          # Validate the tag format
+          if ! [[ $STRIPPED_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+|-beta[0-9]+|-alpha[0-9]+)?$ ]]; then
+            echo "Error: Invalid tag format. Expected format: v1.2.3, v1.2.3-rc1, v1.2.3-beta1, or v1.2.3-alpha1 but got: $STRIPPED_TAG"
+            exit 1
+          fi
+          
           # Set the output variable
           echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
       
