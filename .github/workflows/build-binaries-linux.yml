@@ -43,13 +43,13 @@ jobs:
           cp ./build/libllama-embedder.* ./artifact-pack
           cp ./LICENSE.md ./artifact-pack
           cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llama.cpp
-          tar -czf llama-embedder-ubuntu-x64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
+          tar -czf llama-embedder-linux-x64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: llama-embedder-ubuntu-x64-${{ inputs.tag }}.tar.gz
-          name: llama-embedder-ubuntu-x64
+          path: llama-embedder-linux-x64-${{ inputs.tag }}.tar.gz
+          name: llama-embedder-linux-x64
 
   ubuntu-latest-cmake-arm64:
     runs-on: ubuntu-24.04
@@ -84,10 +84,10 @@ jobs:
           cp ./build/libllama-embedder.* ./artifact-pack
           cp ./LICENSE.md ./artifact-pack
           cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llama.cpp
-          tar -czf llama-embedder-ubuntu-arm64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
+          tar -czf llama-embedder-linux-arm64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: llama-embedder-ubuntu-arm64-${{ inputs.tag }}.tar.gz
-          name: llama-embedder-ubuntu-arm64
+          path: llama-embedder-linux-arm64-${{ inputs.tag }}.tar.gz
+          name: llama-embedder-linux-arm64
