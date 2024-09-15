@@ -53,7 +53,7 @@ jobs:
           mkdir artifact-pack
           copy .\build\Release\llama-embedder.*  artifact-pack\
           copy .\LICENSE.md artifact-pack\LICENSE.md
-          copy .\vendor\llama.cpp\LICENSE artifact-pack\LICENSE-llama.cpp
+          copy .\vendor\llama.cpp\LICENSE artifact-pack\LICENSE-Llamacpp
           cd artifact-pack
           7z a llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip *
           copy llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip ..
