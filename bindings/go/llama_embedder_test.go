@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestLlamaEmbedder(t *testing.T) {
 	if sharedLibPath == "" {
 		sharedLibPath = "../../build/"
 	}
-	sharedLibFile := fmt.Sprintf("%s/%s", sharedLibPath, getOSSharedLibName())
+	sharedLibFile := filepath.Join(sharedLibPath, getOSSharedLibName())
 	err := downloadHFModel(defaultHFRepo, defaultModelFile, defaultModelFile, "")
 	require.NoError(t, err, "Failed to download model")
 	t.Cleanup(func() {

@@ -3,9 +3,10 @@ package llama_embedder
 /*
 #cgo CFLAGS: -I.
 #cgo CXXFLAGS: -I. -std=c++11 -Wall -Wextra -pedantic
-#cgo !clang, !darwin LDFLAGS: -ldl -lstdc++
-#cgo darwin LDFLAGS: -ldl -stdlib=libc++
-#cgo clang LDFLAGS: -ldl -stdlib=libc++
+
+#cgo darwin LDFLAGS: -stdlib=libc++
+#cgo linux LDFLAGS: -ldl -lstdc++
+#cgo windows LDFLAGS: -lkernel32
 #include <stdlib.h>
 #include "wrapper.h"
 
@@ -304,7 +305,7 @@ func getOSSharedLibName() string {
 	case "darwin":
 		return "libllama-embedder.dylib"
 	case "windows":
-		return "libllama-embedder.dll"
+		return "llama-embedder.dll"
 	default:
 		return "libllama-embedder.so"
 	}
