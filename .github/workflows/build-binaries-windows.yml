@@ -10,7 +10,7 @@ on:
 
 jobs:
   windows-latest-cmake:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     strategy:
       matrix:
@@ -18,9 +18,9 @@ jobs:
           - build: 'noavx-x64'
             defines: ''
           - build: 'llvm-arm64'
-            defines: '-G "Ninja Multi-Config"'
+            defines: '-G "Ninja Multi-Config" -D CMAKE_TOOLCHAIN_FILE=vendor/llama.cpp/cmake/arm64-windows-llvm.cmake'
           - build: 'msvc-arm64'
-            defines: '-G "Ninja Multi-Config"'
+            defines: '-G "Ninja Multi-Config" -D CMAKE_TOOLCHAIN_FILE=vendor/llama.cpp/cmake/arm64-windows-msvc.cmake'
 
     steps:
       - name: Clone
