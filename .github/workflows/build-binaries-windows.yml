@@ -42,7 +42,7 @@ jobs:
       - name: Build and Test
         id: cmake_build
         run: |
-          $env:CMAKE_FLAGS = '-S . -B build ${{ matrix.defines }}'
+          $env:CMAKE_FLAGS = '-S . ${{ matrix.defines }}'
           $env:CMAKE_BUILD_FLAGS = "-j $env:NUMBER_OF_PROCESSORS"
           make lib-test
 
