@@ -9,6 +9,8 @@ import (
 )
 
 func TestDownloadVersion(t *testing.T) {
+	err := ensureCacheDir()
+	require.NoError(t, err, "Error creating cache directory: %v", err)
 	libFilePath, err := ensureLibrary("v0.0.8")
 	parent := filepath.Dir(libFilePath)
 	require.NoError(t, err, "Error downloading version: %v", err)
