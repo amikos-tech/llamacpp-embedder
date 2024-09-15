@@ -3,26 +3,29 @@ name: Release Go Binding
 on:
   push:
     tags:
-      - 'go-v[0-9]+.[0-9]+.[0-9]+'
-      - 'go-v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
-      - 'go-v[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
-      - 'go-v[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
+      - 'go/v[0-9]+.[0-9]+.[0-9]+'
+      - 'go/v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+      - 'go/v[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
+      - 'go/v[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
   workflow_dispatch:
     inputs:
       tag:
         description: 'Tag to build'
         required: true
-        default: 'go-v0.0.0'
+        default: 'go/v0.0.0'
 jobs:
 
   go-test:
     name: Lint and Test Go Binding
     uses: ./.github/workflows/go-test.yml
 
-  tag:
+  tag-job:
     needs: [ go-test ]
     runs-on: ubuntu-latest
     name: Get Tag
+    outputs:
+      tag: ${{ steps.tag-output.outputs.tag }}
+      release-tag: ${{ steps.tag-output.outputs.release-tag }}
     steps:
       - name: Get Tag From Ref
         id: tag-ref
@@ -33,11 +36,11 @@ jobs:
           # Extract the tag name from GITHUB_REF
           FULL_TAG=${GITHUB_REF#refs/tags/}
           echo "Full tag: $FULL_TAG"
-          # Remove the 'go-' prefix
-          STRIPPED_TAG=${FULL_TAG#go-}
+          # Remove the 'go/' prefix
+          STRIPPED_TAG=${FULL_TAG#go/}
           echo "Stripped tag: $STRIPPED_TAG"
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+          echo "ref-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
 
       - name: Get Tag From Input
         id: tag-input
@@ -47,8 +50,8 @@ jobs:
           set -e
           FULL_TAG=${{ github.event.inputs.tag }}
           echo "Full tag: $FULL_TAG"
-          # Remove the 'go-' prefix
-          STRIPPED_TAG=${FULL_TAG#go-}
+          # Remove the 'go-/' prefix
+          STRIPPED_TAG=${FULL_TAG#go/}
           echo "Stripped tag: $STRIPPED_TAG"
           
           # Validate the tag format
@@ -58,45 +61,48 @@ jobs:
           fi
           
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+          echo "input-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
       
 
       - name: Output tag
-        id: tag
+        id: tag-output
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            TAG=${{ steps.tag-ref.outputs.tag }}
+            TAG=${{ steps.tag-ref.outputs.ref-tag }}
+            RELEASE_TAG=${GITHUB_REF#refs/tags/}
           else
-            TAG=${{ steps.tag-input.outputs.tag }}
+            TAG=${{ steps.tag-input.outputs.input-tag }}
+            RELEASE_TAG=${{ github.event.inputs.tag }}
           fi
           echo "Tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
         shell: bash
 
   build-linux-binaries:
     name: Build Linux Binaries
-    needs: [ go-test , tag ]
+    needs: [ go-test , tag-job ]
     uses: ./.github/workflows/build-binaries-linux.yml
     with:
-      tag: ${{ needs.tag.outputs.tag }}
+      tag: ${{ needs.tag-job.outputs.tag }}
 
   build-macos-binaries:
     name: Build MacOS Binaries
-    needs: [ go-test , tag ]
+    needs: [ go-test , tag-job ]
     uses: ./.github/workflows/build-binaries-macos.yml
     with:
-      tag: ${{ needs.tag.outputs.tag }}
+      tag: ${{ needs.tag-job.outputs.tag }}
 
   build-windows-binaries:
     name: Build Windows Binaries
-    needs: [ go-test , tag ]
+    needs: [ go-test , tag-job ]
     uses: ./.github/workflows/build-binaries-windows.yml
     with:
-      tag: ${{ needs.tag.outputs.tag }}
+      tag: ${{ needs.tag-job.outputs.tag }}
 
   release:
     name: Create Go Release
-    needs: [ build-linux-binaries, build-macos-binaries, build-windows-binaries ]
+    needs: [ build-linux-binaries, build-macos-binaries, build-windows-binaries, tag-job ]
     runs-on: ubuntu-latest
     steps:
       - name: Clone
@@ -114,7 +120,17 @@ jobs:
 
       - name: Move artifacts
         id: move_artifacts
-        run: mkdir -p ./artifact/release && mv ./artifact/*/*.zip ./artifact/release
+        run: |
+          set -e
+          mkdir -p ./artifact/release && mv ./artifact/*/*.{zip,tar.gz} ./artifact/release
+          ls -latr ./artifact/release
+        shell: bash
+
+      - name: Generate Release Name
+        id: release_name
+        run: |
+          RELEASE_NAME="Go Binding ${{ needs.tag-job.outputs.tag }}"
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
       - name: Create release
         id: create_release
@@ -122,8 +138,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.tag.outputs.tag }}
-          release_name: "Go Binding ${{ needs.tag.outputs.tag }}"
+          tag_name: ${{ needs.tag-job.outputs.release-tag }}
+          release_name: ${{ steps.release_name.outputs.release_name }}
 
       - name: Upload artifacts
         id: upload_release
@@ -132,17 +148,28 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const path = require('path');
-            const fs = require('fs');
+            const fs = require('fs').promises;
             const release_id = '${{ steps.create_release.outputs.id }}';
-            for (let file of await fs.readdirSync('./artifact/release')) {
-              if (path.extname(file) === '.zip') {
-                console.log('uploadReleaseAsset', file);
-                await github.repos.uploadReleaseAsset({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: release_id,
-                  name: file,
-                  data: await fs.readFileSync(`./artifact/release/${file}`)
-                });
+
+            async function uploadDir(dirPath) {
+              const entries = await fs.readdir(dirPath, { withFileTypes: true });
+              for (const entry of entries) {
+                const fullPath = path.join(dirPath, entry.name);
+                if (entry.isDirectory()) {
+                  // If it's a directory, recursively upload its contents
+                  await uploadDir(fullPath);
+                } else if (entry.name.endsWith('.zip') || entry.name.endsWith('.tar.gz')) {
+                  // If it's a zip file, upload it
+                  console.log('uploadReleaseAsset', entry.name);
+                  await github.repos.uploadReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: release_id,
+                    name: entry.name,
+                    data: await fs.readFile(fullPath)
+                  });
+                }
               }
             }
+
+            await uploadDir('./artifact/release');

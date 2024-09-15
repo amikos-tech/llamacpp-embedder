@@ -50,10 +50,17 @@ jobs:
       - name: Pack artifacts
         id: pack_artifacts
         run: |
-          7z a llama-${{ inputs.tag }}-win-${{ matrix.build }}.zip .\build\Release\libllama-embedder.* .\LICENSE.md .\vendor\llama.cpp\LICENSE
+          mkdir artifact-pack
+          copy .\build\Release\llama-embedder.*  artifact-pack\
+          copy .\LICENSE.md artifact-pack\LICENSE.md
+          copy .\vendor\llama.cpp\LICENSE artifact-pack\LICENSE-llama.cpp
+          cd artifact-pack
+          7z a llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip *
+          copy llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip ..
+          cd ..
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: llama-${{ inputs.tag }}-win-${{ matrix.build }}.zip
-          name: llama-bin-win-${{ matrix.build }}.zip
+          path: llama-embedder-win-${{ matrix.build }}-${{ inputs.tag }}.zip
+          name: llama-embedder-win-${{ matrix.build }}
