@@ -3,15 +3,15 @@
 //
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
-#include <iostream>
 #include <stdexcept>
 #include "../../src/embedder.h"
 #include "wrapper.h"
 #include <mutex>
+#include "atomic"
+#include <thread>
 
 static std::mutex embedder_mutex;
 #if defined(_WIN32) || defined(_WIN64)
@@ -64,7 +64,7 @@ std::string GetLastErrorAsString() {
     typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
 #endif
 
-
+std::atomic<int> library_ref_count(0);
 lib_handle libh = nullptr;
 llama_embedder * embedder = nullptr;
 init_embedder_local_func init_embedder_f = nullptr;
@@ -152,7 +152,7 @@ lib_handle load_library(const char * shared_lib_path){
             throw std::runtime_error(error_message);
         }
 #endif
-
+        library_ref_count = 1;
         return libh;
     } catch (const std::exception &e) {
         std::string error_message = "Failed to load shared library: " + std::string(e.what());
@@ -194,19 +194,22 @@ int init_llama_embedder(char * model_path, uint32_t pooling_type ) {
 
 void free_llama_embedder() {
     std::lock_guard<std::mutex> lock(embedder_mutex);
-    if (embedder != nullptr) {
-        free_embedder_f(embedder);
-    }
-    if (libh != nullptr) {
+    if (library_ref_count.fetch_sub(1) == 1) {
+        if (embedder != nullptr) {
+            free_embedder_f(embedder);
+        }
+        if (libh != nullptr) {
 #if defined(_WIN32) || defined(_WIN64)
-        if (!FreeLibrary(libh)){
-            fprintf(stderr, "Failed to free library %lu\n", GetLastError());
-        }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); //small delay to allow for backend to be freed
+            if (!FreeLibrary(libh)){
+                fprintf(stderr, "Failed to free library %lu\n", GetLastError());
+            }
 #else
-        if(dlclose(libh) != 0){
-            fprintf(stderr, "Failed to close library %s\n", dlerror());
-        }
+            if (dlclose(libh) != 0) {
+                fprintf(stderr, "Failed to close library %s\n", dlerror());
+            }
 #endif
+        }
     }
 }
 
