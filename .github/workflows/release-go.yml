@@ -37,7 +37,7 @@ jobs:
           STRIPPED_TAG=${FULL_TAG#go-}
           echo "Stripped tag: $STRIPPED_TAG"
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_ENV
+          echo "ref-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
 
       - name: Get Tag From Input
         id: tag-input
@@ -58,19 +58,19 @@ jobs:
           fi
           
           # Set the output variable
-          echo "tag=$STRIPPED_TAG" >> $GITHUB_ENV
+          echo "input-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
       
 
       - name: Output tag
         id: tag
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            TAG=${{ steps.tag-ref.outputs.tag }}
+            TAG=${{ steps.tag-ref.outputs.ref-tag }}
           else
-            TAG=${{ steps.tag-input.outputs.tag }}
+            TAG=${{ steps.tag-input.outputs.input-tag }}
           fi
           echo "Tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
         shell: bash
   post-tag:
     runs-on: ubuntu-latest
