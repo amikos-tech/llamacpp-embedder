@@ -153,6 +153,10 @@ func NewLlamaEmbedder(modelPath string, opts ...Option) (*LlamaEmbedder, func(),
 	if modelPath == "" {
 		return nil, nil, fmt.Errorf("modelPath is not set")
 	}
+	err := ensureCacheDir()
+	if err != nil {
+		return nil, nil, err
+	}
 	if e.hfRepo != "" {
 		e.modelPath = filepath.Join(e.localCacheDir, filepath.Base(modelPath))
 		err := downloadHFModel(e.hfRepo, modelPath, e.modelPath, "")
@@ -165,7 +169,7 @@ func NewLlamaEmbedder(modelPath string, opts ...Option) (*LlamaEmbedder, func(),
 		}
 		e.modelPath = modelPath
 	}
-	err := e.loadLibrary()
+	err = e.loadLibrary()
 	freeFunc := func() {
 		e.Close()
 	}

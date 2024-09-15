@@ -124,3 +124,22 @@ func getOSSharedLibName() string {
 		return "libllama-embedder.so"
 	}
 }
+
+func ensureCacheDir() error {
+	if _, err := os.Stat(defaultCacheDir); os.IsNotExist(err) {
+		err := os.MkdirAll(defaultCacheDir, 0755)
+		if err != nil {
+			return fmt.Errorf("could not create cache directory: %v", err)
+		}
+		err = os.MkdirAll(defaultModelCacheDir, 0755)
+		if err != nil {
+			return fmt.Errorf("could not create model cache directory: %v", err)
+		}
+		err = os.MkdirAll(defaultLibCacheDir, 0755)
+		if err != nil {
+			return fmt.Errorf("could not create library cache directory: %v", err)
+		}
+	}
+
+	return nil
+}
