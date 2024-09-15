@@ -12,7 +12,7 @@ on:
       tag:
         description: 'Tag to build'
         required: true
-        default: 'go-v0.0.0'
+        default: 'go/v0.0.0'
 jobs:
 
 #  go-test:
@@ -25,6 +25,7 @@ jobs:
     name: Get Tag
     outputs:
       tag: ${{ steps.tag-output.outputs.tag }}
+      release-tag: ${{ steps.tag-output.outputs.release-tag }}
     steps:
       - name: Get Tag From Ref
         id: tag-ref
@@ -35,8 +36,8 @@ jobs:
           # Extract the tag name from GITHUB_REF
           FULL_TAG=${GITHUB_REF#refs/tags/}
           echo "Full tag: $FULL_TAG"
-          # Remove the 'go-' prefix
-          STRIPPED_TAG=${FULL_TAG#go-}
+          # Remove the 'go/' prefix
+          STRIPPED_TAG=${FULL_TAG#go/}
           echo "Stripped tag: $STRIPPED_TAG"
           # Set the output variable
           echo "ref-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
@@ -49,8 +50,8 @@ jobs:
           set -e
           FULL_TAG=${{ github.event.inputs.tag }}
           echo "Full tag: $FULL_TAG"
-          # Remove the 'go-' prefix
-          STRIPPED_TAG=${FULL_TAG#go-}
+          # Remove the 'go-/' prefix
+          STRIPPED_TAG=${FULL_TAG#go/}
           echo "Stripped tag: $STRIPPED_TAG"
           
           # Validate the tag format
@@ -68,11 +69,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             TAG=${{ steps.tag-ref.outputs.ref-tag }}
+            RELEASE_TAG=${GITHUB_REF#refs/tags/}
           else
             TAG=${{ steps.tag-input.outputs.input-tag }}
+            RELEASE_TAG=${{ github.event.inputs.tag }}
           fi
           echo "Tag: $TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
         shell: bash
 
   build-linux-binaries:
@@ -121,7 +125,7 @@ jobs:
         id: move_artifacts
         run: |
           set -e
-          mkdir -p ./artifact/release && mv ./artifact/*/*.zip ./artifact/release
+          mkdir -p ./artifact/release && mv ./artifact/*/*.{zip,tar.gz} ./artifact/release
           ls -latr ./artifact/release
         shell: bash
 
@@ -137,7 +141,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.tag-job.outputs.tag }}
+          tag_name: ${{ needs.tag-job.outputs.release-tag }}
           release_name: ${{ steps.release_name.outputs.release_name }}
 
       - name: Upload artifacts
