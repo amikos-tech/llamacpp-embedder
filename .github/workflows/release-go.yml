@@ -23,6 +23,8 @@ jobs:
 #    needs: [ go-test ]
     runs-on: ubuntu-latest
     name: Get Tag
+    outputs:
+      tag: ${{ steps.tag-output.outputs.tag }}
     steps:
       - name: Get Tag From Ref
         id: tag-ref
