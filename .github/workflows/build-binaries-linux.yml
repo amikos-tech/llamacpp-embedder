@@ -43,7 +43,7 @@ jobs:
           cp ./build/libllama-embedder.* ./artifact-pack
           cp ./LICENSE.md ./artifact-pack
           cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llama.cpp
-          tar -czf llama-embedder-ubuntu-x64-${{ inputs.tag }}.tar.gz ./artifact-pack .
+          tar -czf llama-embedder-ubuntu-x64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
