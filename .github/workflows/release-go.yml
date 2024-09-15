@@ -70,7 +70,7 @@ jobs:
             TAG=${{ steps.tag-input.outputs.tag }}
           fi
           echo "Tag: $TAG"
-          echo "tag=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
         shell: bash
 
   build-linux-binaries:
@@ -114,7 +114,13 @@ jobs:
 
       - name: Move artifacts
         id: move_artifacts
-        run: mkdir -p ./artifact/release && mv ./artifact/*/*.zip ./artifact/release
+        run: mkdir -p ./artifact/release && mv ./artifact/*.zip ./artifact/release
+
+      - name: Generate Release Name
+        id: release_name
+        run: |
+          RELEASE_NAME="Go Binding ${{ needs.tag.outputs.tag }}"
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
       - name: Create release
         id: create_release
@@ -123,7 +129,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.tag.outputs.tag }}
-          release_name: "Go Binding ${{ needs.tag.outputs.tag }}"
+          release_name: ${{ steps.release_name.outputs.release_name }}
 
       - name: Upload artifacts
         id: upload_release
