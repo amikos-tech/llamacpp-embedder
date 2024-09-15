@@ -18,7 +18,7 @@ jobs:
   go-test:
     name: Lint and Test Go Binding
     uses: ./.github/workflows/go-test.yml
-    if: github.event_name == 'push'+
+    if: github.event_name == 'push'
 
   tag-job:
 #    needs: [ go-test ]
