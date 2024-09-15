@@ -263,6 +263,9 @@ void get_metadata(llama_embedder *embedder, std::unordered_map<std::string, std:
 
 
 void free_embedder(llama_embedder *embedder) noexcept {
+    if (!embedder) {
+        return;
+    }
     if (embedder->model) {
         llama_free_model(embedder->model);
     }
