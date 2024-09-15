@@ -62,7 +62,7 @@ func ensureLibrary(libraryVersion string) (string, error) {
 		return "", err
 	}
 
-	if cos == "win" {
+	if runtime.GOOS == "windows" {
 		// Unzip the file
 		err = extractZip(libArchive, filepath.Join(defaultLibCacheDir, libArchiveBase))
 		if err != nil {
