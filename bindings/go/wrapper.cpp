@@ -40,11 +40,28 @@ std::string GetLastErrorAsString() {
 }
 #endif
 
-typedef llama_embedder * (*init_embedder_local_func)(const char *, uint32_t);
-typedef void (*free_embedder_local_func)(llama_embedder *);
-typedef FloatMatrix (*embed_c_local_func)(llama_embedder *, const char  ** , size_t , int32_t);
-typedef int (*get_metadata_c_local_func)(llama_embedder *,MetadataPair**, size_t*);
-typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN64)
+        typedef llama_embedder* (*init_embedder_local_func)(const char*, uint32_t);
+        typedef void (*free_embedder_local_func)(llama_embedder*);
+        typedef FloatMatrix (*embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+        typedef int (*get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+        typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
+    #else
+        typedef llama_embedder* (__cdecl *init_embedder_local_func)(const char*, uint32_t);
+        typedef void (__cdecl *free_embedder_local_func)(llama_embedder*);
+        typedef FloatMatrix (__cdecl *embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+        typedef int (__cdecl *get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+        typedef void (__cdecl *free_metadata_c_local_func)(MetadataPair*, size_t);
+    #endif
+#else
+    typedef llama_embedder* (*init_embedder_local_func)(const char*, uint32_t);
+    typedef void (*free_embedder_local_func)(llama_embedder*);
+    typedef FloatMatrix (*embed_c_local_func)(llama_embedder*, const char**, size_t, int32_t);
+    typedef int (*get_metadata_c_local_func)(llama_embedder*, MetadataPair**, size_t*);
+    typedef void (*free_metadata_c_local_func)(MetadataPair*, size_t);
+#endif
+
 
 lib_handle libh = nullptr;
 llama_embedder * embedder = nullptr;
@@ -82,13 +99,13 @@ lib_handle load_library(const char * shared_lib_path){
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-        init_embedder_f = (init_embedder_local_func) GetProcAddress(libh, "init_embedder");
+        init_embedder_f = reinterpret_cast<init_embedder_local_func>(GetProcAddress(libh, "init_embedder"));
         if (!init_embedder_f) {
             std::string error_message = "Failed to load init_embedder function: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
-        init_embedder_f = (init_embedder_local_func) dlsym(libh, "init_embedder");
+        init_embedder_f = reinterpret_cast<init_embedder_local_func>(dlsym(libh, "init_embedder"));
         if (!init_embedder_f) {
             std::string error_message = "Failed to load init_embedder function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
@@ -96,13 +113,13 @@ lib_handle load_library(const char * shared_lib_path){
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-        free_embedder_f = (free_embedder_local_func) GetProcAddress(libh, "free_embedder");
+        free_embedder_f = reinterpret_cast<free_embedder_local_func>(GetProcAddress(libh, "free_embedder"));
         if (!free_embedder_f) {
             std::string error_message = "Failed to load free_embedder function: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
-        free_embedder_f = (free_embedder_local_func) dlsym(libh, "free_embedder");
+        free_embedder_f = reinterpret_cast<free_embedder_local_func>(dlsym(libh, "free_embedder"));
         if (!free_embedder_f) {
             std::string error_message = "Failed to load free_embedder function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
@@ -110,13 +127,13 @@ lib_handle load_library(const char * shared_lib_path){
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-        embed_f = (embed_c_local_func) GetProcAddress(libh, "embed_c");
+        embed_f = reinterpret_cast<embed_c_local_func>(GetProcAddress(libh, "embed_c"));
         if (!embed_f) {
             std::string error_message = "Failed to load embed function: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
-        embed_f = (embed_c_local_func) dlsym(libh, "embed_c");
+        embed_f = reinterpret_cast<embed_c_local_func>(dlsym(libh, "embed_c"));
         if (!embed_f) {
             std::string error_message = "Failed to load embed function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
@@ -124,13 +141,13 @@ lib_handle load_library(const char * shared_lib_path){
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-        get_metadata_f = (get_metadata_c_local_func) GetProcAddress(libh, "get_metadata_c");
+        get_metadata_f = reinterpret_cast<get_metadata_c_local_func>(GetProcAddress(libh, "get_metadata_c"));
         if (!get_metadata_f) {
             std::string error_message = "Failed to load get_metadata function: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
-        get_metadata_f = (get_metadata_c_local_func) dlsym(libh, "get_metadata_c");
+        get_metadata_f = reinterpret_cast<get_metadata_c_local_func>( dlsym(libh, "get_metadata_c"));
         if (!get_metadata_f) {
             std::string error_message = "Failed to load get_metadata function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
@@ -139,13 +156,13 @@ lib_handle load_library(const char * shared_lib_path){
 
 
 #if defined(_WIN32) || defined(_WIN64)
-        free_metadata_f = (free_metadata_c_local_func) GetProcAddress(libh, "free_metadata_c");
+        free_metadata_f = reinterpret_cast<free_metadata_c_local_func>(GetProcAddress(libh, "free_metadata_c"));
         if (!free_metadata_f) {
             std::string error_message = "Failed to load free_metadata function: " + GetLastErrorAsString();
             throw std::runtime_error(error_message);
         }
 #else
-        free_metadata_f = (free_metadata_c_local_func) dlsym(libh, "free_metadata_c");
+        free_metadata_f = reinterpret_cast<free_metadata_c_local_func>(dlsym(libh, "free_metadata_c"));
         if (!free_metadata_f) {
             std::string error_message = "Failed to load free_metadata function: " + std::string(dlerror());
             throw std::runtime_error(error_message);
@@ -191,14 +208,16 @@ int init_llama_embedder(char * model_path, uint32_t pooling_type ) {
 }
 
 void free_llama_embedder() {
-    if (embedder) {
+    if (embedder != nullptr) {
         free_embedder_f(embedder);
     }
     if (libh != nullptr) {
 #if defined(_WIN32) || defined(_WIN64)
+        fprintf(stderr, "Freeing library under win\n");
         if (!FreeLibrary(libh)){
             fprintf(stderr, "Failed to free library %lu\n", GetLastError());
         }
+        frprintf(stderr, "FREEED library under win\n");
 #else
         if(dlclose(libh) != 0){
             fprintf(stderr, "Failed to close library %s\n", dlerror());
