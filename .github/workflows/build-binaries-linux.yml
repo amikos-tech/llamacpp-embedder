@@ -42,7 +42,7 @@ jobs:
           mkdir artifact-pack
           cp ./build/libllama-embedder.* ./artifact-pack
           cp ./LICENSE.md ./artifact-pack
-          cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llama.cpp
+          cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llamacpp
           tar -czf llama-embedder-linux-x64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
 
       - name: Upload artifacts
@@ -83,7 +83,7 @@ jobs:
           mkdir artifact-pack
           cp ./build/libllama-embedder.* ./artifact-pack
           cp ./LICENSE.md ./artifact-pack
-          cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llama.cpp
+          cp ./vendor/llama.cpp/LICENSE ./artifact-pack/LICENSE-llamacpp
           tar -czf llama-embedder-linux-arm64-${{ inputs.tag }}.tar.gz -C ./artifact-pack .
 
       - name: Upload artifacts
