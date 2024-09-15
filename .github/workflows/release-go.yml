@@ -19,7 +19,7 @@ jobs:
 #    name: Lint and Test Go Binding
 #    uses: ./.github/workflows/go-test.yml
 
-  tag:
+  tag-job:
 #    needs: [ go-test ]
     runs-on: ubuntu-latest
     name: Get Tag
@@ -75,13 +75,13 @@ jobs:
         shell: bash
   post-tag:
     runs-on: ubuntu-latest
-    needs: [ tag ]
+    needs: [ tag-job ]
     steps:
       - name: Get Tag
         id: get_tag
         run: |
-          echo "Tag: ${{ needs.tag.outputs.tag }}"
-          echo "test: ${{ needs.tag.outputs.test }}"
+          echo "Tag: ${{ needs.tag-job.outputs.tag }}"
+          echo "test: ${{ needs.tag-job.outputs.test }}"
 #
 #  build-linux-binaries:
 #    name: Build Linux Binaries
