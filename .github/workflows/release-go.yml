@@ -62,7 +62,7 @@ jobs:
       
 
       - name: Output tag
-        id: tag
+        id: tag-output
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             TAG=${{ steps.tag-ref.outputs.ref-tag }}
