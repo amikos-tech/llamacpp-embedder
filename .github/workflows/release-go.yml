@@ -120,7 +120,11 @@ jobs:
 
       - name: Move artifacts
         id: move_artifacts
-        run: mkdir -p ./artifact/release && mv ./artifact/*.zip ./artifact/release
+        run: |
+          set -e
+          mkdir -p ./artifact/release && mv ./artifact/*.zip ./artifact/release
+          ls -latr ./artifact/release
+        shell: bash
 
       - name: Generate Release Name
         id: release_name
