@@ -161,7 +161,7 @@ jobs:
                 if (entry.isDirectory()) {
                   // If it's a directory, recursively upload its contents
                   await uploadDir(fullPath);
-                } else if (path.extname(entry.name) === '.zip') {
+                } else if (path.extname(entry.name) === '.zip' || path.extname(entry.name) === '.tar.gz') {
                   // If it's a zip file, upload it
                   console.log('uploadReleaseAsset', entry.name);
                   await github.repos.uploadReleaseAsset({
