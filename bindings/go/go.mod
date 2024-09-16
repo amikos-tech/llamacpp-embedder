@@ -1,4 +1,4 @@
-module github.com/amikos-tech/llama-embedder
+module github.com/amikos-tech/llamacpp-embedder/bindings/go
 
 go 1.21
 
