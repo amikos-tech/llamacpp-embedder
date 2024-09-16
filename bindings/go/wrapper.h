@@ -26,13 +26,18 @@ typedef struct {
     float *data;
     size_t rows;
     size_t cols;
-} FloatMatrixW;
+} FloatMatrix;
+
+typedef struct {
+    const char* key;
+    const char* value;
+} MetadataPair;
 
 EXPORT_GO_WRAPPER lib_handle load_library(const char *shared_lib_path);
 EXPORT_GO_WRAPPER int init_llama_embedder(char *model_path, uint32_t pooling_type);
 EXPORT_GO_WRAPPER void free_llama_embedder();
-EXPORT_GO_WRAPPER FloatMatrixW llama_embedder_embed(const char **texts, size_t text_count, int32_t norm);
-EXPORT_GO_WRAPPER void free_float_matrixw(FloatMatrixW * fm);
+EXPORT_GO_WRAPPER FloatMatrix llama_embedder_embed(const char **texts, size_t text_count, int32_t norm);
+EXPORT_GO_WRAPPER void free_float_matrixw(FloatMatrix * fm);
 
 EXPORT_GO_WRAPPER const char* get_last_error();
 

@@ -7,13 +7,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdexcept>
-#include "../../src/embedder.h"
 #include "wrapper.h"
 #include <mutex>
 #include "atomic"
 #include <thread>
 
 static std::mutex embedder_mutex;
+typedef struct llama_embedder llama_embedder;
+
 #if defined(_WIN32) || defined(_WIN64)
 
 // Helper function to get the last error message on Windows
@@ -213,16 +214,12 @@ void free_llama_embedder() {
     }
 }
 
-FloatMatrixW llama_embedder_embed(const char** texts, size_t text_count, int32_t norm) {
+FloatMatrix llama_embedder_embed(const char** texts, size_t text_count, int32_t norm) {
     std::lock_guard<std::mutex> lock(embedder_mutex);
-    FloatMatrixW fm = {nullptr, 0, 0};
+    FloatMatrix fm = {nullptr, 0, 0};
     try {
         std::vector<std::vector<float>> output;
-        auto f1 = embed_f(embedder, texts, text_count, norm);
-        fm.data = f1.data;
-        fm.rows = f1.rows;
-        fm.cols = f1.cols;
-
+        fm = embed_f(embedder, texts, text_count, norm);
     } catch (const std::exception &e) {
         set_last_error(e.what());
     }
@@ -277,7 +274,7 @@ void free_metadata(char** metadata_array, size_t size) {
     free(metadata_array);
 }
 
-void free_float_matrixw(FloatMatrixW * fm) {
+void free_float_matrixw(FloatMatrix * fm) {
     if (fm != nullptr){
         if (fm->data != nullptr) {
             free(fm->data);
