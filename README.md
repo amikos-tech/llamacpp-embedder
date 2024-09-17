@@ -12,7 +12,87 @@ locally.
 source distributable that can be built on target platform. Building from source is far less user-friendly and is
 intended for advanced users that want a custom builds e.g. for GPU support.
 
-## Building
+## Bindings
+
+The usefulness of llama-embedder library lies in the bindings that allow it to be used in various languages.
+
+- [Python](#python) - self-contained python binary package shipped for Linux (x86_64, arm64), MacOS (x86_64, arm64) and
+  Windows (x86_64)
+- [Golang](#golang) - go module that can be integrated in your go project with no additional dependencies. The module
+  has builtin mechanism to get the appropriate shared library for the platform.
+- [Node.js](#nodejs) - coming soon
+- [Java](#java) - coming soon
+
+### Python
+
+The library comes in zero-dependency small python package - https://pypi.org/project/llama-embedder/
+
+**Installation:**
+
+```bash
+pip install llama-embedder
+```
+
+**Usage:**
+
+```python
+from llama_embedder import LlamaEmbedder
+
+embedder = LlamaEmbedder(model_path='./path/to/model.gguf')
+
+# Embed stings
+
+embeddings = embedder.embed(['Hello World!', 'My name is Ishmael.'])
+```
+
+### Golang
+
+The library is also available as a Go module - https://pkg.go.dev/github.com/amikos-tech/llamacpp-embedder/bindings/go
+
+**Installation:**
+
+```bash
+go get github.com/amikos-tech/llamacpp-embedder/bindings/go
+```
+
+**Usage:**
+
+```go
+package main
+
+import (
+	"fmt"
+	llama "github.com/amikos-tech/llamacpp-embedder/bindings/go"
+)
+
+func main() {
+	hfRepo := "ChristianAzinn/snowflake-arctic-embed-s-gguf"
+	hfFile := "snowflake-arctic-embed-s-f16.GGUF"
+	e, closeFunc, err := llama.NewLlamaEmbedder(hfFile, llama.WithHFRepo(hfRepo))
+	if err != nil {
+        panic(err)
+    }
+	defer closeFunc()
+	res, err := e.EmbedTexts([]string{"Hello world", "My name is Ishmael"})
+    if err != nil {
+        panic(err)
+    }
+	
+    for _, r := range res {
+        fmt.Println(r)
+    }
+}
+```
+
+### Node.js
+
+Coming soon. If you are interested and would like to contribute, we invite you to submit a PR.
+
+### Java
+
+Coming soon. If you are interested and would like to contribute, we invite you to submit a PR.
+
+## Building the library
 
 This project requires cmake to build.
 
@@ -29,15 +109,3 @@ To run the tests:
 ```bash
 make lib-test
 ```
-
-### Python bindings
-
-To build the python bindings run:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-make python-cidist-local
-```
-
-The above command will build the shared library, the python binding package and run the tests.
