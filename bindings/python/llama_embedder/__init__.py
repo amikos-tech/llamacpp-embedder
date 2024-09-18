@@ -35,6 +35,7 @@ class Embedder(object):
             raise ValueError("If model_path is a directory, hf_repository must be specified")
         self._model_path = model_path
         if hf_repository is not None:
+            _ensure_cache_dir()
             self._model_path = str(self._download_model(model_path, hf_repository))
         self._pooling_type = pooling_type
         self._normalization_type = normalization_type
@@ -76,3 +77,8 @@ class Embedder(object):
                     out_file.write(chunk)
 
         return target_file
+
+
+def _ensure_cache_dir():
+    if not model_cache_dir.exists():
+        model_cache_dir.mkdir(parents=True, exist_ok=True)
