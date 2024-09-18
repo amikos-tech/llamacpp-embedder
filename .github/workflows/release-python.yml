@@ -20,11 +20,11 @@ on:
         required: false
         type: boolean
         default: false
-      inputs:
-        tag:
-          description: 'Tag to build'
-          required: true
-          default: 'python/0.0.0'
+      tag:
+        description: 'Tag to build'
+        required: true
+        default: 'python/0.0.0'
+        type: string
 
 jobs:
   py-test:
