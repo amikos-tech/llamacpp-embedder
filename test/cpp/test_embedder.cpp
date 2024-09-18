@@ -55,8 +55,7 @@ TEST(EmbedderTest, EmbedCWithModel) {
 const char* valid_model_path = "snowflake-arctic-embed-s/snowflake-arctic-embed-s-f16.GGUF";
 uint32_t pooling_type = 1; // LLAMA_POOLING_TYPE_NONE
 llama_embedder* embedder = init_embedder(valid_model_path, pooling_type);
-
-FloatMatrix output = embed_c(embedder, new const char*[]{"Hello, world!"}, 1, 2);
+FloatMatrix output = embed_c(embedder, (const char*[]){"Hello, world!"}, 1, 2);
 EXPECT_NE(embedder, nullptr);
 EXPECT_NE(embedder->context, nullptr);
 EXPECT_NE(embedder->model, nullptr);
