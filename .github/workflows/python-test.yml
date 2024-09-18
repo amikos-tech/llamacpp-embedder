@@ -1,0 +1,100 @@
+name: Python Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_artifacts: #this is useful for verifying artifacts
+        description: 'Upload artifacts'
+        required: false
+        type: boolean
+        default: false
+
+  workflow_call:
+    inputs:
+      upload_artifacts:
+        description: 'Upload artifacts'
+        required: false
+        type: boolean
+        default: false
+
+  pull_request:
+    paths:
+      - bindings/python/**
+      - src/**
+
+jobs:
+  build:
+    name: Build and Test ${{matrix.os}} ${{matrix.python}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [windows-latest,macos-latest,ubuntu-latest]
+        python: [38,39,310,311,312]
+    steps:
+      - name: Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.os == 'ubuntu-latest'
+
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Ninja
+        if: matrix.os == 'windows-latest'
+        id: install_ninja
+        run: |
+          choco install ninja
+
+      - name: Set Linux Env
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
+
+      - name: Set Mac flags
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
+        run: |
+          echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j$(sysctl -n hw.logicalcpu)" >> $GITHUB_ENV
+
+      - name: Set Windows Env
+        if: matrix.os == 'windows-latest'
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "SHARED_LIB_PATH=../../build/Release"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_BUILD_FLAGS=-j$env:NUMBER_OF_PROCESSORS"
+
+      - name: Build wheels
+        run: |
+          make python-cidist
+        env:
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8"
+          CIBW_BUILD: "cp${{matrix.python}}-*"
+          CIBW_SKIP: "pp* *musllinux*"
+          CIBW_ARCHS_MACOS: "arm64 x86_64"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
+          CIBW_BEFORE_BUILD: "make lib"
+          CIBW_TEST_REQUIRES: "pytest>=6.0.0 huggingface_hub"
+          CIBW_TEST_COMMAND: "python -m pytest {project}/bindings/python/tests/test"
+          CIBW_TEST_SKIP: "*-macosx_x86_64"
+
+      - name: Upload artifacts
+        if: ${{ ( github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch') && github.event.inputs.upload_artifacts == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions-${{matrix.os}}-${{matrix.python}}
+          path: dist
