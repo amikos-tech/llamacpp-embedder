@@ -21,7 +21,7 @@ embedder = Embedder(model_path='./path/to/model.gguf')
 
 # Embed stings
 
-embeddings = embedder.embed_texts(['Hello World!', 'My name is Ishmael.'])
+embeddings = embedder.embed_texts(["Hello World!", "My name is Ishmael."])
 ```
 
 ### Hugging Face Models
