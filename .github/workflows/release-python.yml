@@ -15,12 +15,16 @@ on:
         required: false
         type: boolean
         default: true
-
       create_release:
         description: 'Create a PyPi release'
         required: false
         type: boolean
         default: false
+      inputs:
+        tag:
+          description: 'Tag to build'
+          required: true
+          default: 'python/0.0.0'
 
 jobs:
   py-test:
