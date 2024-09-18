@@ -33,16 +33,27 @@ The library comes in zero-dependency small python package - https://pypi.org/pro
 pip install llama-embedder
 ```
 
-**Usage:**
+**Usage - Local Models:**
 
 ```python
-from llama_embedder import LlamaEmbedder
+from llama_embedder import Embedder
 
-embedder = LlamaEmbedder(model_path='./path/to/model.gguf')
+embedder = Embedder(model_path='./path/to/model.gguf')
 
 # Embed stings
 
-embeddings = embedder.embed(['Hello World!', 'My name is Ishmael.'])
+embeddings = embedder.embed_texts(["Hello World!", "My name is Ishmael."])
+```
+
+**Usage - Hugging Face Models:**
+
+```python
+from llama_embedder import Embedder
+
+hf_repo = "ChristianAzinn/snowflake-arctic-embed-s-gguf"
+gguf_file = "snowflake-arctic-embed-s-f16.GGUF"
+embedder = Embedder(gguf_file, hf_repository=hf_repo)
+embeddings = embedder.embed_texts(["Hello, world!", "My name is Ishmael."])
 ```
 
 ### Golang
