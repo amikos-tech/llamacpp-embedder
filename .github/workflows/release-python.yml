@@ -30,6 +30,8 @@ jobs:
   py-test:
     name: Lint and Test Python Binding
     uses: ./.github/workflows/python-test.yml
+    with:
+      upload_artifacts: true
 
   tag-job:
     needs: [ py-test ]
