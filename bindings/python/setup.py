@@ -46,17 +46,16 @@ class CustomBuildExt(build_ext):
         print("doing CustomBuildExt")
         self._pkg_dir = os.path.join(self.build_lib, "llama_embedder")
         os.makedirs(self._pkg_dir, exist_ok=True)
+        shutil.copytree("bindings/python/llama_embedder", os.path.join(self.build_lib, "llama_embedder"),
+                        dirs_exist_ok=True, ignore=lambda s, x: ["__pycache__"])
         if platform.system() != "Windows":
             shared_lib_path = os.path.join('build', get_lib_name())
             print(f"Looking for shared library at: {shared_lib_path}")
-
             if not os.path.exists(shared_lib_path):
                 raise FileNotFoundError(f"Shared library not found at {shared_lib_path}")
             shutil.copy2(shared_lib_path, self._pkg_dir)
-            shutil.copytree("bindings/python/llama_embedder", os.path.join(self.build_lib, "llama_embedder"),
-                            dirs_exist_ok=True, ignore=lambda s, x: ["__pycache__"])
         elif platform.system() == "Windows":
-            find_and_copy_win_shared_lib("build", get_lib_name(), self.build_lib)
+            find_and_copy_win_shared_lib("build", get_lib_name(), self._pkg_dir)
         build_ext.run(self)
         if platform.system() == "Darwin":  # post-processing of MacOS lib to fix linking
             extension_path = self.get_ext_fullpath('llama_embedder')
