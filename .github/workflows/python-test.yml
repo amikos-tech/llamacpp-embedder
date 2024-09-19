@@ -28,8 +28,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macos-latest]
-        python: [38]
+        os: [windows-latest,macos-latest,ubuntu-latest]
+        python: [38,39,310,311,312]
     steps:
       - name: Dependencies
         if: matrix.os == 'ubuntu-latest'
