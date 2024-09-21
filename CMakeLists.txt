@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(llamacpp-embedder C CXX)
 include(CheckIncludeFileCXX)
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (NOT XCODE AND NOT MSVC AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
