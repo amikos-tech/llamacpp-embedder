@@ -19,6 +19,10 @@ func DownloadHFModel(hfRepo, hfFile, targetLocation, hfToken string) error {
 		return fmt.Errorf("model file must be a .gguf file")
 	}
 
+	if strings.Contains(targetLocation, "\\") || strings.Contains(targetLocation, "..") {
+		return fmt.Errorf("invalid target location")
+	}
+
 	// Validate and sanitize the filename
 	filename := sanitizeFileName(filepath.Base(hfFile))
 	if filename == "" {
@@ -142,6 +146,9 @@ func isValidHuggingFaceURL(url string) bool {
 func determineOutputPath(targetLocation, filename string) (string, error) {
 	if targetLocation == "" {
 		return filename, nil
+	}
+	if strings.Contains(targetLocation, "\\") || strings.Contains(targetLocation, "..") {
+		return "", fmt.Errorf("invalid target location")
 	}
 
 	info, err := os.Stat(targetLocation)
