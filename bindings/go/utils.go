@@ -48,6 +48,11 @@ func extractTarGz(tarGzPath, destPath string) error {
 			return fmt.Errorf("tar reading error: %v", err)
 		}
 
+		// Check for directory traversal
+		if strings.Contains(header.Name, "..") {
+			return fmt.Errorf("invalid file path in tar archive: %s", header.Name)
+		}
+
 		target := filepath.Join(destPath, header.Name)
 
 		switch header.Typeflag {
