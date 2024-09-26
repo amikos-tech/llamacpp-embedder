@@ -40,6 +40,9 @@ func DownloadHFModel(hfRepo, hfFile, targetLocation, hfToken string) error {
 	if err != nil {
 		return err
 	}
+	if outputPath == "" || strings.Contains(outputPath, "\\") || strings.Contains(outputPath, "..") {
+		return fmt.Errorf("invalid output path")
+	}
 
 	// Check if the file already exists
 	if _, err := os.Stat(outputPath); err == nil {
