@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -18,20 +19,36 @@ func DownloadHFModel(hfRepo, hfFile, targetLocation, hfToken string) error {
 		return fmt.Errorf("model file must be a .gguf file")
 	}
 
-	if _, err := os.Stat(targetLocation); err == nil {
-		return nil
+	// Validate and sanitize the filename
+	filename := sanitizeFileName(filepath.Base(hfFile))
+	if filename == "" {
+		return fmt.Errorf("invalid filename")
 	}
+
+	// Construct and validate the URL
+	url := fmt.Sprintf("https://huggingface.co/%s/resolve/main/%s", sanitizeURLPath(hfRepo), sanitizeURLPath(hfFile))
+	if !isValidHuggingFaceURL(url) {
+		return fmt.Errorf("invalid Hugging Face URL")
+	}
+
+	// Determine the output path
+	outputPath, err := determineOutputPath(targetLocation, filename)
+	if err != nil {
+		return err
+	}
+
+	// Check if the file already exists
+	if _, err := os.Stat(outputPath); err == nil {
+		return nil // File already exists, no need to download
+	}
+
+	// Create the HTTP client and request
 	client := &http.Client{}
-
-	url := fmt.Sprintf("https://huggingface.co/%s/resolve/main/%s", hfRepo, hfFile)
-
-	// Create HTTP GET request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
 
-	// Set Authorization header if HF_TOKEN is provided
 	if hfToken != "" {
 		req.Header.Set("Authorization", "Bearer "+hfToken)
 	}
@@ -43,45 +60,8 @@ func DownloadHFModel(hfRepo, hfFile, targetLocation, hfToken string) error {
 	}
 	defer resp.Body.Close()
 
-	// Check for HTTP errors
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("HTTP error: %s", resp.Status)
-	}
-
-	// Extract filename from URL
-	segments := strings.Split(url, "/")
-	filename := segments[len(segments)-1]
-	if filename == "" {
-		return fmt.Errorf("failed to extract filename from URL")
-	}
-
-	var outputPath string
-
-	// Determine the output path based on targetLocation
-	if targetLocation != "" {
-		// Check if targetLocation is a directory
-		info, err := os.Stat(targetLocation)
-		if err == nil && info.IsDir() {
-			// targetLocation is an existing directory
-			outputPath = filepath.Join(targetLocation, filename)
-		} else if os.IsNotExist(err) && strings.HasSuffix(targetLocation, string(os.PathSeparator)) {
-			// targetLocation is a non-existing directory (ends with / or \)
-			if err := os.MkdirAll(targetLocation, os.ModePerm); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-			outputPath = filepath.Join(targetLocation, filename)
-		} else {
-			// targetLocation is a file path
-			outputDir := filepath.Dir(targetLocation)
-			// Create the directory if it doesn't exist
-			if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-			outputPath = targetLocation
-		}
-	} else {
-		// No targetLocation provided, use current directory
-		outputPath = filename
 	}
 
 	// Create the output file
@@ -101,12 +81,20 @@ func EnsureModels(models string) error {
 	modelList := strings.Split(models, ";")
 	for _, model := range modelList {
 		segments := strings.Split(model, "/")
+		if len(segments) < 3 {
+			return fmt.Errorf("invalid model format: %s", model)
+		}
 		hfRepo := fmt.Sprintf("%s/%s", segments[0], segments[1])
 		hfFile := strings.Join(segments[2:], "/")
 		if !strings.HasSuffix(strings.ToLower(hfFile), ".gguf") {
 			return fmt.Errorf("model file must be a .gguf file")
 		}
-		targetLocation := filepath.Join(GetModelCacheDir(), hfFile)
+		// Validate the file name
+		if !isValidFileName(hfFile) {
+			return fmt.Errorf("invalid file name: %s", hfFile)
+		}
+
+		targetLocation := filepath.Join(GetModelCacheDir(), sanitizeFileName(hfFile))
 		fmt.Printf("Downloading model %s from %s to %s\n", hfFile, hfRepo, targetLocation)
 		err := DownloadHFModel(hfRepo, hfFile, targetLocation, "")
 		if err != nil {
@@ -114,4 +102,64 @@ func EnsureModels(models string) error {
 		}
 	}
 	return nil
+}
+
+// isValidFileName checks if the given file name is valid and safe
+func isValidFileName(name string) bool {
+	// Check for any path traversal attempts
+	if strings.Contains(name, "..") {
+		return false
+	}
+
+	// Check for any directory separators
+	if strings.ContainsAny(name, "/\\") {
+		return false
+	}
+
+	// Additional checks can be added here if needed
+
+	return true
+}
+
+// sanitizeFileName removes any potentially dangerous characters from the file name
+func sanitizeFileName(name string) string {
+	// Remove any characters that aren't alphanumeric, dash, underscore, or dot
+	return regexp.MustCompile(`[^a-zA-Z0-9\-_.]`).ReplaceAllString(name, "")
+}
+
+// sanitizeURLPath sanitizes the path component of a URL
+func sanitizeURLPath(path string) string {
+	// Remove any characters that aren't alphanumeric, dash, underscore, dot, or forward slash
+	return regexp.MustCompile(`[^a-zA-Z0-9\-_./]`).ReplaceAllString(path, "")
+}
+
+// isValidHuggingFaceURL checks if the given URL is a valid Hugging Face URL
+func isValidHuggingFaceURL(url string) bool {
+	return strings.HasPrefix(url, "https://huggingface.co/") && strings.Contains(url, "/resolve/main/")
+}
+
+// determineOutputPath determines the final output path for the downloaded file
+func determineOutputPath(targetLocation, filename string) (string, error) {
+	if targetLocation == "" {
+		return filename, nil
+	}
+
+	info, err := os.Stat(targetLocation)
+	if err == nil && info.IsDir() {
+		return filepath.Join(targetLocation, filename), nil
+	}
+
+	if os.IsNotExist(err) && strings.HasSuffix(targetLocation, string(os.PathSeparator)) {
+		if err := os.MkdirAll(targetLocation, os.ModePerm); err != nil {
+			return "", fmt.Errorf("failed to create directory: %v", err)
+		}
+		return filepath.Join(targetLocation, filename), nil
+	}
+
+	// targetLocation is a file path
+	outputDir := filepath.Dir(targetLocation)
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create directory: %v", err)
+	}
+	return targetLocation, nil
 }
