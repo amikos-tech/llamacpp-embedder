@@ -78,21 +78,32 @@ func extractZip(zipPath, destPath string) error {
 	defer r.Close()
 
 	for _, f := range r.File {
+		// Ensure the file path is safe
+		if strings.Contains(f.Name, "..") {
+			return fmt.Errorf("invalid file path: %v", f.Name)
+		}
 		target := filepath.Join(destPath, f.Name)
+		absTarget, err := filepath.Abs(target)
+		if err != nil {
+			return fmt.Errorf("could not resolve absolute path: %v", err)
+		}
+		if !strings.HasPrefix(absTarget, filepath.Clean(destPath)+string(os.PathSeparator)) {
+			return fmt.Errorf("invalid file path: %v", absTarget)
+		}
 
 		if f.FileInfo().IsDir() {
-			err = os.MkdirAll(target, 0755)
+			err = os.MkdirAll(absTarget, 0755)
 			if err != nil {
 				return fmt.Errorf("could not create directory: %v", err)
 			}
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(absTarget), 0755); err != nil {
 			return fmt.Errorf("could not create directory: %v", err)
 		}
 
-		outFile, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := os.OpenFile(absTarget, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return fmt.Errorf("could not open output file: %v", err)
 		}
