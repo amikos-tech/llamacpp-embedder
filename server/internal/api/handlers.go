@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -41,6 +42,9 @@ func EmbedTextsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
+	}
+	if !strings.HasSuffix(req.Model, ".gguf") || strings.Contains(req.Model, "/") || strings.Contains(req.Model, "\\") || strings.Contains(req.Model, "..") {
+		http.Error(w, "Invalid model", http.StatusBadRequest)
 	}
 	cache := r.Context().Value("cache").(*cache2.Cache)
 	if cache == nil {
