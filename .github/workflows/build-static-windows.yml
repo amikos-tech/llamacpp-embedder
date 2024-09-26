@@ -1,4 +1,4 @@
-name: Build Windows Binaries
+name: Build Windows Static Libraries
 
 on:
   workflow_dispatch:

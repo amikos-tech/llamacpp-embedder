@@ -1,4 +1,4 @@
-name: Build Linux Binaries
+name: Build Linux Static Libraries
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Build MacOS Binaries
+name: Build MacOS Static Libraries
 
 on:
   workflow_dispatch:
