@@ -1,0 +1,40 @@
+# Build stage
+FROM golang:1.22-bookworm AS builder
+
+WORKDIR /app
+
+COPY . .
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libomp-dev && \
+    make lib-static && \
+    cd server && \
+    make build
+
+# Run stage
+FROM debian:bookworm-slim
+
+
+WORKDIR /app
+
+COPY --from=builder /app/server/bin/llama-embedder-server /app/llama-embedder-server
+# Copy necessary shared libraries
+#COPY --from=builder "/lib/${BUILDPLATFORM}-linux-gnu/libstdc++.so.6" "/lib/libstdc++.so.6"
+#COPY --from=builder /lib/${BUILDPLATFORM}-linux-gnu/libm.so.6 /lib/libm.so.6
+#COPY --from=builder /lib/${BUILDPLATFORM}-linux-gnu/libgomp.so.1 /lib/libgomp.so.1
+#COPY --from=builder /lib/${BUILDPLATFORM}-linux-gnu/libgcc_s.so.1 /lib/libgcc_s.so.1
+#COPY --from=builder /lib/${BUILDPLATFORM}-linux-gnu/libc.so.6 /lib/libc.so.6
+
+# Copy the dynamic linker
+#COPY --from=builder /lib/${BUILDPLATFORM}-linux-gnu/ld-linux-${BUILDPLATFORM}.so.1 /lib/ld-linux.so.1
+
+RUN apt-get update && apt-get install -y \
+    libgomp1 libstdc++6 ca-certificates
+ENV PORT=8080
+ENV LLAMA_CACHE_DIR=/tmp/llama-cache
+ENV LLAMA_MODEL_TTL_MINUTES=60
+
+EXPOSE ${PORT}
+
+ENTRYPOINT ["/app/llama-embedder-server"]

@@ -1,0 +1,116 @@
+name: Server Release
+
+on:
+  push:
+    tags:
+      - 'server/[0-9]+.[0-9]+.[0-9]+'
+      - 'server/[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+      - 'server/[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
+      - 'server/[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
+        default: 'server/0.0.0'
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: "amikos/llama-embed-server"
+
+jobs:
+  tag-job:
+    runs-on: ubuntu-latest
+    name: Get Tag
+    outputs:
+      tag: ${{ steps.tag-output.outputs.tag }}
+      release-tag: ${{ steps.tag-output.outputs.release-tag }}
+    steps:
+      - name: Get Tag From Ref
+        id: tag-ref
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -e
+          # Extract the tag name from GITHUB_REF
+          FULL_TAG=${GITHUB_REF#refs/tags/}
+          echo "Full tag: $FULL_TAG"
+          # Remove the 'python/' prefix
+          STRIPPED_TAG=${FULL_TAG#server/}
+          echo "Stripped tag: $STRIPPED_TAG"
+          # Set the output variable
+          echo "ref-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get Tag From Input
+        id: tag-input
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -e
+          FULL_TAG=${{ github.event.inputs.tag }}
+          echo "Full tag: $FULL_TAG"
+          # Remove the 'python/' prefix
+          STRIPPED_TAG=${FULL_TAG#server/}
+          echo "Stripped tag: $STRIPPED_TAG"
+
+          # Validate the tag format
+          if ! [[ $STRIPPED_TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+|-beta[0-9]+|-alpha[0-9]+)?$ ]]; then
+            echo "Error: Invalid tag format. Expected format: 1.2.3, 1.2.3-rc1, 1.2.3-beta1, or 1.2.3-alpha1 but got: $STRIPPED_TAG"
+            exit 1
+          fi
+
+          # Set the output variable
+          echo "input-tag=$STRIPPED_TAG" >> $GITHUB_OUTPUT
+
+
+      - name: Output tag
+        id: tag-output
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            TAG=${{ steps.tag-ref.outputs.ref-tag }}
+            RELEASE_TAG=${GITHUB_REF#refs/tags/}
+          else
+            TAG=${{ steps.tag-input.outputs.input-tag }}
+            RELEASE_TAG=${{ github.event.inputs.tag }}
+          fi
+          echo "Tag: $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+        shell: bash
+
+  build-images:
+    needs: [tag-job]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.description={{.README}}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push release Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile-server
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: "${{ env.IMAGE_NAME }}:${{ needs.tag-job.outputs.tag }},${{ env.IMAGE_NAME }}:latest"

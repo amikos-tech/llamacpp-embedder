@@ -7,4 +7,5 @@
 *.out
 go.work
 *.gguf
-server
+./server
+bin/
