@@ -1,11 +1,11 @@
 package embedder
 
 /*
-#cgo CFLAGS: -I. -I../../../src
+#cgo CFLAGS: -I. -I../../../src -fsanitize=address
 #cgo CXXFLAGS: -I. -I../../../src -std=c++11 -Wall -Wextra -pedantic
 
 #cgo LDFLAGS: -L../../../build/static -lllama-embedder -lcommon -lllama -lggml
-#cgo darwin LDFLAGS: -stdlib=libc++ -framework Accelerate -framework Metal -framework Foundation -framework MetalKit
+#cgo darwin LDFLAGS: -stdlib=libc++ -framework Accelerate -framework Metal -framework Foundation -framework MetalKit -fsanitize=address
 #cgo linux LDFLAGS: -lstdc++ -fopenmp
 #cgo windows LDFLAGS: -lkernel32
 #include <stdlib.h>
@@ -16,11 +16,12 @@ package embedder
 import "C"
 import (
 	"fmt"
-	"github.com/amikos-tech/llamacpp-embedder/server/internal/utils"
 	"os"
 	"path/filepath"
 	"sync"
 	"unsafe"
+
+	"github.com/amikos-tech/llamacpp-embedder/server/internal/utils"
 )
 
 type NormalizationType int32
@@ -130,6 +131,7 @@ func NewLlamaEmbedder(modelPath string, opts ...Option) (*LlamaEmbedder, func(),
 		e.modelPath = modelPath
 	}
 	cModelPath := C.CString(modelPath)
+	defer C.free(unsafe.Pointer(cModelPath))
 	var embedder *C.llama_embedder
 	result := C.init_embedder_l(&embedder, cModelPath, C.uint32_t(uint32(e.defaultPoolingType)))
 	if result != 0 {
@@ -138,9 +140,10 @@ func NewLlamaEmbedder(modelPath string, opts ...Option) (*LlamaEmbedder, func(),
 	e.embedder = embedder
 	return e, func() {
 		e.Close()
-		C.free(unsafe.Pointer(cModelPath))
 	}, nil
 }
+
+type FloatMatrixW C.FloatMatrixW
 
 // EmbedTexts embeds the given texts using the model
 func (e *LlamaEmbedder) EmbedTexts(texts []string) ([][]float32, error) {
@@ -157,9 +160,8 @@ func (e *LlamaEmbedder) EmbedTexts(texts []string) ([][]float32, error) {
 		}
 	}()
 	result := C.embed_texts(e.embedder, (**C.char)(unsafe.Pointer(&cTexts[0])), C.size_t(len(texts)), C.int32_t(int32(e.defaultNormalizationType)))
-	defer func() {
-		C.free_float_matrixw(&result)
-	}()
+
+	defer C.free_float_matrixw((*C.FloatMatrixW)(unsafe.Pointer(&result)))
 	if result.data == nil {
 		return nil, fmt.Errorf("failed to embed text: %v", C.GoString(C.get_last_error()))
 	}

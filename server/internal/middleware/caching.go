@@ -9,11 +9,7 @@ import (
 var cache *cache2.Cache
 
 func init() {
-	var err error
-	cache, err = cache2.NewCache()
-	if err != nil {
-		panic(err)
-	}
+	cache = cache2.NewCache()
 }
 
 func CachingMiddleware(next http.Handler) http.Handler {

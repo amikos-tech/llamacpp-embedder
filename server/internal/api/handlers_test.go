@@ -3,14 +3,16 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"sync"
+	"testing"
+
 	"github.com/amikos-tech/llamacpp-embedder/server/internal/middleware"
 	"github.com/amikos-tech/llamacpp-embedder/server/internal/types"
 	"github.com/amikos-tech/llamacpp-embedder/server/internal/utils"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"path/filepath"
-	"testing"
 )
 
 const defaultHFRepo = "leliuga/all-MiniLM-L6-v2-GGUF"
@@ -115,4 +117,83 @@ func TestEmbedTextsHandler(t *testing.T) {
 	for _, r := range returned.Embeddings {
 		require.Len(t, r, 384, "Embeddings should have length 384")
 	}
+}
+
+func TestConcurrentEmbedTexts(t *testing.T) {
+	// Create a test server
+	server := httptest.NewServer(http.HandlerFunc(EmbedTextsHandler))
+	defer server.Close()
+
+	// Test parameters
+	concurrentRequests := 10
+	textsPerRequest := 5
+
+	// Create a wait group to synchronize goroutines
+	var wg sync.WaitGroup
+	wg.Add(concurrentRequests)
+
+	// Create a channel to collect results
+	results := make(chan float64, concurrentRequests)
+
+	// Function to send a single request
+	sendRequest := func() {
+		defer wg.Done()
+
+		// Prepare the request body
+		texts := make([]string, textsPerRequest)
+		for i := range texts {
+			texts[i] = "Sample text for embedding"
+		}
+		reqBody := types.EmbedRequest{
+			Model: "test_model.gguf",
+			Texts: texts,
+		}
+		jsonBody, _ := json.Marshal(reqBody)
+
+		// Send the request
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Errorf("Failed to send request: %v", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		// Check the response status
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Unexpected status code: %d", resp.StatusCode)
+			return
+		}
+
+		// Decode the response
+		var embedResp types.EmbedResponse
+		err = json.NewDecoder(resp.Body).Decode(&embedResp)
+		if err != nil {
+			t.Errorf("Failed to decode response: %v", err)
+			return
+		}
+
+		// Send the number of embeddings to the results channel
+		results <- float64(len(embedResp.Embeddings))
+	}
+
+	// Start concurrent requests
+	for i := 0; i < concurrentRequests; i++ {
+		go sendRequest()
+	}
+
+	// Wait for all requests to complete
+	wg.Wait()
+	close(results)
+
+	// Calculate average number of embeddings
+	var total float64
+	count := 0
+	for result := range results {
+		total += result
+		count++
+	}
+	avgEmbeddings := total / float64(count)
+
+	t.Logf("Average number of embeddings per request: %.2f", avgEmbeddings)
+	t.Logf("Total concurrent requests processed: %d", count)
 }
