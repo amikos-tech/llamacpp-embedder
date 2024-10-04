@@ -2,8 +2,9 @@ package types
 
 const VERSION = "1.0.0"
 
-type EmbedModelList struct {
+type EmbedModelListResponse struct {
 	Models []string `json:"models"`
+	Error  string   `json:"error"`
 }
 
 type EmbedRequest struct {
@@ -13,4 +14,5 @@ type EmbedRequest struct {
 
 type EmbedResponse struct {
 	Embeddings [][]float32 `json:"embeddings"`
+	Error      string      `json:"error"`
 }

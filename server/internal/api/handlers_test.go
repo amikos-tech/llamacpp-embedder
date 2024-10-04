@@ -3,14 +3,15 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/amikos-tech/llamacpp-embedder/server/internal/middleware"
-	"github.com/amikos-tech/llamacpp-embedder/server/internal/types"
-	"github.com/amikos-tech/llamacpp-embedder/server/internal/utils"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+
+	"github.com/amikos-tech/llamacpp-embedder/server/internal/middleware"
+	"github.com/amikos-tech/llamacpp-embedder/server/internal/types"
+	"github.com/amikos-tech/llamacpp-embedder/server/internal/utils"
+	"github.com/stretchr/testify/require"
 )
 
 const defaultHFRepo = "leliuga/all-MiniLM-L6-v2-GGUF"
@@ -81,12 +82,11 @@ func TestEmbedModelsHandler(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
-	var returned map[string][]string
+	var returned types.EmbedModelListResponse
 	err = json.Unmarshal(rr.Body.Bytes(), &returned)
 	require.NoError(t, err, "Failed to unmarshal response")
-	require.Contains(t, returned, "models")
-	require.IsType(t, []string{}, returned["models"])
-	require.Contains(t, returned["models"], defaultModelFile)
+	require.IsType(t, []string{}, returned.Models)
+	require.Contains(t, returned.Models, defaultModelFile)
 }
 
 func TestEmbedTextsHandler(t *testing.T) {
