@@ -279,12 +279,26 @@ void free_embedder(llama_embedder *embedder) noexcept {
 FloatMatrix embed_c(llama_embedder * embedder, const char  ** texts,size_t  text_len, int32_t embd_norm){
     std::vector<std::string> texts_inner;
     texts_inner.reserve(text_len);
-for (size_t i = 0; i < text_len; i++) {
+    for (size_t i = 0; i < text_len; i++) {
         texts_inner.emplace_back(texts[i]);
     }
     std::vector<std::vector<float>> output;
-    embed(embedder, texts_inner, output, embd_norm);
     FloatMatrix floatMatrix;
+    try{
+        embed(embedder, texts_inner, output, embd_norm);
+    } catch (const std::exception &e) {
+        fprintf(stderr, "Error: %s\n", e.what());
+        floatMatrix.rows = 0;
+        floatMatrix.cols = 0;
+        floatMatrix.data = nullptr;
+        return floatMatrix;
+    }
+    if (output.empty()) {
+        floatMatrix.rows = 0;
+        floatMatrix.cols = 0;
+        floatMatrix.data = nullptr;
+        return floatMatrix;
+    }
     floatMatrix.rows = output.size();
     floatMatrix.cols = output[0].size();
     floatMatrix.data = (float *)malloc(floatMatrix.rows * floatMatrix.cols * sizeof(float));
@@ -421,4 +435,5 @@ void embed(llama_embedder *embedder, const std::vector<std::string> & texts, std
             }
         }
     }
+    llama_batch_free(batch);
 }
