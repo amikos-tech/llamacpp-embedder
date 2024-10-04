@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/amikos-tech/llamacpp-embedder/server/internal/middleware"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ func EmbedTextsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cache := r.Context().Value("cache").(*cache2.Cache)
+	cache := r.Context().Value(middleware.CacheKey).(*cache2.Cache)
 	if cache == nil {
 		http.Error(w, "Cache not found", http.StatusInternalServerError)
 		return
