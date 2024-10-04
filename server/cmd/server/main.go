@@ -8,27 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"runtime"
-	"runtime/debug"
-	"time"
 )
-
-func logMemoryUsage() {
-	for {
-		var m runtime.MemStats
-		runtime.ReadMemStats(&m)
-		log.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-		log.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-		log.Printf("\tSys = %v MiB", bToMb(m.Sys))
-		log.Printf("\tNumGC = %v\n", m.NumGC)
-		debug.FreeOSMemory()
-		time.Sleep(1 * time.Minute)
-	}
-}
-
-func bToMb(b uint64) uint64 {
-	return b / 1024 / 1024
-}
 
 func main() {
 	err := utils.EnsureCacheDir()

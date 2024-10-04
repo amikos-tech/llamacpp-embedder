@@ -17,6 +17,10 @@ run:
 lint:
 	golangci-lint run
 
+.PHONY: lint-fix
+lint-fix:
+	golangci-lint run --fix ./...
+
 .PHONYT: clean
 clean:
 	rm -rf ./bin

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	cache2 "github.com/amikos-tech/llamacpp-embedder/server/internal/cache"
@@ -16,9 +15,7 @@ import (
 	"github.com/amikos-tech/llamacpp-embedder/server/internal/worker"
 )
 
-var mu sync.RWMutex
-
-func EmbedModelsHandler(w http.ResponseWriter, r *http.Request) {
+func EmbedModelsHandler(w http.ResponseWriter, _ *http.Request) {
 	files, err := os.ReadDir(utils.GetModelCacheDir())
 	if err != nil {
 		http.Error(w, "Failed to read cache directory", http.StatusInternalServerError)
@@ -88,12 +85,20 @@ func EmbedTextsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func VersionHandler(w http.ResponseWriter, r *http.Request) {
+func VersionHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"version": types.VERSION})
+	err := json.NewEncoder(w).Encode(map[string]string{"version": types.VERSION})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
+func HealthHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"status": "running", "time": time.Now().Unix()})
+	err := json.NewEncoder(w).Encode(map[string]any{"status": "running", "time": time.Now().Unix()})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
