@@ -1,11 +1,11 @@
 package embedder
 
 /*
-#cgo CFLAGS: -I. -I../../../src -fsanitize=address
+#cgo CFLAGS: -I. -I../../../src
 #cgo CXXFLAGS: -I. -I../../../src -std=c++11 -Wall -Wextra -pedantic
 
 #cgo LDFLAGS: -L../../../build/static -lllama-embedder -lcommon -lllama -lggml
-#cgo darwin LDFLAGS: -stdlib=libc++ -framework Accelerate -framework Metal -framework Foundation -framework MetalKit -fsanitize=address
+#cgo darwin LDFLAGS: -stdlib=libc++ -framework Accelerate -framework Metal -framework Foundation -framework MetalKit
 #cgo linux LDFLAGS: -lstdc++ -fopenmp
 #cgo windows LDFLAGS: -lkernel32
 #include <stdlib.h>
