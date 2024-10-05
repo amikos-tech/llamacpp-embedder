@@ -1,0 +1,109 @@
+name: Test Go Server
+
+on:
+  workflow_call: { }
+  workflow_dispatch: { }
+  pull_request:
+    paths:
+      - server/**
+      - src/**
+      - .github/workflows/server-test.yml
+
+env:
+  IMAGE_NAME: "amikos/llama-embed-server"
+
+jobs:
+  lint-and-test:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'server/go.mod'
+      - name: Build static libs
+        run: make lib-static-test
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: server/
+          args: --verbose
+      - name: Test
+        run: make test
+        working-directory: server/
+  integration-test:
+    name: Build Image and Test
+    runs-on: ${{ matrix.os }}
+    needs: [ lint-and-test ]
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'server/go.mod'
+      - name: Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential libcurl4-openssl-dev
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.os == 'ubuntu-latest'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        if: matrix.os == 'ubuntu-latest'
+      - name: Install Ninja
+        if: matrix.os == 'windows-latest'
+        id: install_ninja
+        run: |
+          choco install ninja
+      - name: Set Mac Env
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
+        run: |
+          echo "CMAKE_FLAGS=-DGGML_METAL_EMBED_LIBRARY=ON" >> $GITHUB_ENV
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j$(sysctl -n hw.logicalcpu)" >> $GITHUB_ENV
+      - name: Set Linux Env
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "SHARED_LIB_PATH=../../build" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
+      - name: Set Windows Env
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "SHARED_LIB_PATH=../../build/Release"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_BUILD_FLAGS=-j$env:NUMBER_OF_PROCESSORS"
+      - name: Build and Test
+        run: |
+          make lib-static-test
+        env:
+          GTEST_COLOR: yes
+          GTEST_OUTPUT: xml:test_results.xml
+          CMAKE_FLAGS: ${{ env.CMAKE_FLAGS }}
+          CMAKE_BUILD_FLAGS: ${{ env.CMAKE_BUILD_FLAGS }}
+      - name: Build and push release Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile-server
+          platforms: linux/amd64
+          tags: "${{ env.IMAGE_NAME }}:latest"
+      - name: Run integration tests
+        run: |
+            echo "Running integration tests"
+        working-directory: server/
