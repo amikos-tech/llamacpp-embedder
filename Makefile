@@ -49,6 +49,15 @@ go-lint:
 go-lint-fix:
 	cd bindings/go && golangci-lint run --fix ./...
 
+.PHONY: node-lib
+node-lib:
+	rm -rf bindings/node/prebuilds
+	cd bindings/node && npm run configure && npm run prebuild
+
+.PHONY: node-test
+node-test: node-lib
+	cd bindings/node && npm run test
+
 ARCH := "${_PYTHON_HOST_PLATFORM}"
 IS_X86 = false
 ifeq ($(findstring x86_64,$(ARCH)),x86_64)

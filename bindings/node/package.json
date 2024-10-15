@@ -1,0 +1,33 @@
+{
+  "name": "llama-embedder",
+  "version": "0.0.1",
+  "description": "Easy to use embedding library built on top of llama.cpp",
+  "main": "llama_embedder.js",
+  "scripts": {
+    "configure": "node-gyp configure",
+    "test": "node test.js",
+    "prebuild": "prebuild -r napi -f"
+  },
+  "files": [
+    "llama_embedder.js",
+    "prebuilds/**/*"
+  ],
+  "keywords": [
+    "llama.cpp",
+    "llama",
+    "embedding",
+    "machine learning"
+  ],
+  "author": "Trayan Azarov",
+  "license": "MIT",
+  "dependencies": {
+    "node-gyp-build": "^4.8.2"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.1.0",
+    "prebuild": "^13.0.1"
+  },
+  "binary": {
+    "napi_versions": [8]
+  }
+}
