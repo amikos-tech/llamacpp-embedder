@@ -50,7 +50,7 @@ go-lint-fix:
 	cd bindings/go && golangci-lint run --fix ./...
 
 .PHONY: node-lib
-node-lib:
+node-lib: lib-static-test
 	rm -rf bindings/node/prebuilds
 	cd bindings/node && npm i && npm run configure && npm run prebuild
 
