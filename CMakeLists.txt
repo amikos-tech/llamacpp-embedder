@@ -26,6 +26,7 @@ set(TARGET llama-embedder)
 set(CMAKE_CXX_STANDARD 11)
 if (LLAMA_EMBEDDER_BUILD_STATIC)
     add_library(${TARGET} STATIC src/embedder.cpp src/embedder.h)
+    target_compile_definitions(${TARGET} PUBLIC LLAMA_EMBEDDER_STATIC)
     install(TARGETS ${TARGET} ARCHIVE)
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/static)
     add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -40,16 +41,17 @@ if (LLAMA_EMBEDDER_BUILD_STATIC)
     add_custom_command(TARGET ${TARGET} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ggml> ${CMAKE_BINARY_DIR}/static/
     )
+    target_link_libraries(${TARGET} PUBLIC common llama ggml ${CMAKE_THREAD_LIBS_INIT})
 else()
     add_library(${TARGET} SHARED src/embedder.cpp src/embedder.h)
     set_target_properties(${TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_compile_options(${TARGET} PRIVATE -fvisibility=default)
     target_compile_definitions(${TARGET} PRIVATE BUILDING_DLL)
     install(TARGETS ${TARGET} LIBRARY)
+    target_link_libraries(${TARGET} PRIVATE common llama ggml ${CMAKE_THREAD_LIBS_INIT})
 endif()
 target_include_directories(${TARGET} PUBLIC .)
 target_compile_features(${TARGET} PUBLIC cxx_std_11)
-target_link_libraries(${TARGET} PRIVATE common llama ggml ${CMAKE_THREAD_LIBS_INIT})
 
 # Add GoogleTest dependency
 # Add Google Test
@@ -69,7 +71,7 @@ if(APPLE)
     set_target_properties(embedder_test PROPERTIES OSX_DEPLOYMENT_TARGET "14.0")
 endif()
 # Link GoogleTest libraries
-target_link_libraries(embedder_test PRIVATE ${TARGET} common llama ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
+target_link_libraries(embedder_test PRIVATE ${TARGET} common llama ggml ${CMAKE_THREAD_LIBS_INIT} gtest gtest_main)
 # Enable testing
 enable_testing()
 include(GoogleTest)

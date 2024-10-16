@@ -11,11 +11,15 @@
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
-#if defined(BUILDING_DLL)
-        #define EXPORT_SYMBOL __declspec(dllexport)
+#ifdef LLAMA_EMBEDDER_STATIC
+        #define EXPORT_SYMBOL
     #else
-        #define EXPORT_SYMBOL __declspec(dllimport)
-    #endif
+        #if defined(BUILDING_DLL)
+                #define EXPORT_SYMBOL __declspec(dllexport)
+        #else
+                #define EXPORT_SYMBOL __declspec(dllimport)
+        #endif
+#endif
 #else
 #define EXPORT_SYMBOL __attribute__((visibility("default")))
 #endif
