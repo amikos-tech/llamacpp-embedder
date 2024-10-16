@@ -24,11 +24,8 @@
       "msvs_settings": {
         "VCCLCompilerTool": {
           "ExceptionHandling": 1,
-          "AdditionalOptions": [ "/std:c++11", "/MT" ]
+          "AdditionalOptions": [ "/MD" ]
         },
-        "VCLinkerTool": {
-          "AdditionalOptions": [ "/NODEFAULTLIB:libcmt.lib" ]
-        }
       },
       "conditions": [
       [ 'OS=="mac"', {
@@ -58,9 +55,6 @@
             "../../../build/static/llama.lib",
             "../../../build/static/ggml.lib",
             "../../../build/static/common.lib",
-            "msvcrt.lib",
-            "libcmt.lib",
-            "oldnames.lib",
             "kernel32.lib"
             ]
         }]
