@@ -10,7 +10,10 @@
       "dependencies": [
         "<!(node -p \"require('node-addon-api').gyp\")"
       ],
-      "defines": [ "NAPI_CPP_EXCEPTIONS" ],
+      "defines": [
+          "NAPI_CPP_EXCEPTIONS",
+          "LLAMA_EMBEDDER_STATIC",
+      ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "" , "-std=c++11" , "-Wall", "-Wextra", "-pedantic","-fno-exceptions"],
       "xcode_settings": {
@@ -19,7 +22,8 @@
         "MACOSX_DEPLOYMENT_TARGET": "10.9"
       },
       "msvs_settings": {
-        "VCCLCompilerTool": { "ExceptionHandling": 1 }
+        "VCCLCompilerTool": { "ExceptionHandling": 1 },
+        "VCLinkerTool": {"AdditionalOptions": [ "/FORCE:MULTIPLE" ]},
       },
       "conditions": [
       [ 'OS=="mac"', {
