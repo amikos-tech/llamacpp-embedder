@@ -52,7 +52,7 @@ go-lint-fix:
 .PHONY: node-lib
 node-lib:
 	rm -rf bindings/node/prebuilds
-	cd bindings/node && npm run configure && npm run prebuild
+	cd bindings/node && npm i && npm run configure && npm run prebuild
 
 .PHONY: node-test
 node-test: node-lib
