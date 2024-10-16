@@ -1,5 +1,6 @@
 #include <napi.h>
 #include "embedder.h" // Make sure this header is in the include path
+#include <stdexcept>
 
 class LlamaEmbedder : public Napi::ObjectWrap<LlamaEmbedder> {
 public:
@@ -75,53 +76,67 @@ Napi::Value LlamaEmbedder::Embed(const Napi::CallbackInfo& info) {
     Napi::Array texts_array = info[0].As<Napi::Array>();
     int32_t embd_norm = info[1].As<Napi::Number>().Int32Value();
 
-    std::vector<std::string> texts;
+    std::vector<std::string> texts(texts_array.Length());
+    std::vector<const char*> texts_c(texts_array.Length());
     for (uint32_t i = 0; i < texts_array.Length(); i++) {
         Napi::Value text = texts_array[i];
         if (!text.IsString()) {
             Napi::TypeError::New(env, "Array must contain only strings").ThrowAsJavaScriptException();
             return env.Null();
         }
-        texts.push_back(text.As<Napi::String>().Utf8Value());
+        texts[i] = text.As<Napi::String>().Utf8Value();
+        texts_c[i] = texts[i].c_str();
     }
 
-    std::vector<std::vector<float>> embeddings;
+    FloatMatrix embeddings;
     try {
-        embed(this->embedder, texts, embeddings, embd_norm);
+        embeddings = embed_c(this->embedder, texts_c.data(), texts.size(), embd_norm);
     } catch (const std::exception& e) {
         Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
         return env.Null();
     }
 
-    Napi::Array result = Napi::Array::New(env, embeddings.size());
-    for (size_t i = 0; i < embeddings.size(); i++) {
-        Napi::Array embedding = Napi::Array::New(env, embeddings[i].size());
-        for (size_t j = 0; j < embeddings[i].size(); j++) {
-            embedding[j] = Napi::Number::New(env, embeddings[i][j]);
+    Napi::Array result = Napi::Array::New(env, embeddings.rows);
+    for (size_t i = 0; i < embeddings.rows; i++) {
+        Napi::Array embedding = Napi::Array::New(env, embeddings.cols);
+        for (size_t j = 0; j < embeddings.cols; j++) {
+            embedding[j] = Napi::Number::New(env, *(embeddings.data + i * embeddings.cols + j));
         }
         result[i] = embedding;
     }
-
+    free_float_matrix(&embeddings);
     return result;
 }
 
 Napi::Value LlamaEmbedder::GetMetadata(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
-    std::unordered_map<std::string, std::string> metadata;
+    MetadataPair* metadata_array = nullptr;
+    size_t count = 0;
+
     try {
-        get_metadata(this->embedder, metadata);
+        int result = get_metadata_c(this->embedder, &metadata_array, &count);
+        if (result != 0) {
+            throw std::runtime_error("Failed to get metadata");
+        }
+
+        Napi::Object result_obj = Napi::Object::New(env);
+        for (size_t i = 0; i < count; i++) {
+            result_obj.Set(metadata_array[i].key, metadata_array[i].value);
+        }
+
+        // Free the allocated memory
+        free_metadata_c(metadata_array, count);
+
+        return result_obj;
     } catch (const std::exception& e) {
+        // Make sure to free the memory even if an exception occurs
+        if (metadata_array != nullptr) {
+            free_metadata_c(metadata_array, count);
+        }
         Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
         return env.Null();
     }
-
-    Napi::Object result = Napi::Object::New(env);
-    for (const auto& pair : metadata) {
-        result.Set(pair.first, pair.second);
-    }
-
-    return result;
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {

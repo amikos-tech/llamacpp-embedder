@@ -10,8 +10,9 @@
       "dependencies": [
         "<!(node -p \"require('node-addon-api').gyp\")"
       ],
-      "cflags!": [ "" ],
-      "cflags_cc!": [ "" , "-std=c++11" , "-Wall", "-Wextra", "-pedantic"],
+      "defines": [ "NAPI_CPP_EXCEPTIONS" ],
+      "cflags!": [ "-fno-exceptions" ],
+      "cflags_cc!": [ "" , "-std=c++11" , "-Wall", "-Wextra", "-pedantic","-fno-exceptions"],
       "xcode_settings": {
         "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
         "CLANG_CXX_LIBRARY": "libc++",
@@ -27,6 +28,11 @@
           "-framework Metal",
           "-framework Foundation",
           "-framework MetalKit"
+        ]
+      }],
+      [ 'OS=="linux"', {
+        "libraries": [
+          "-fopenmp",
         ]
       }],
       ],
