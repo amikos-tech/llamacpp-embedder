@@ -92,8 +92,8 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem -Path .\build -Recurse
-#      - name: Setup tmate session
-#        if: always() && matrix.os == 'windows-latest'
-#        uses: mxschmitt/action-tmate@v3
-#        with:
-#          limit-access-to-actor: true
+      - name: Setup tmate session
+        if: always() && matrix.os == 'windows-latest'
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
