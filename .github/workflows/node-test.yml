@@ -91,7 +91,7 @@ jobs:
         if: always() && matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Get-ChildItem -Path .\build -Recurse -Directory
+          Get-ChildItem -Path .\build -Recurse
 #      - name: Setup tmate session
 #        if: always() && matrix.os == 'windows-latest'
 #        uses: mxschmitt/action-tmate@v3
