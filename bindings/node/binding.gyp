@@ -27,21 +27,31 @@
           "-framework Accelerate",
           "-framework Metal",
           "-framework Foundation",
-          "-framework MetalKit"
+          "-framework MetalKit",
+          "../../../build/static/libllama-embedder.a",
+          "../../../build/static/libllama.a",
+          "../../../build/static/libggml.a",
+          "../../../build/static/libcommon.a",
         ]
       }],
       [ 'OS=="linux"', {
         "libraries": [
           "-fopenmp",
+          "../../../build/static/libllama-embedder.a",
+          "../../../build/static/libllama.a",
+          "../../../build/static/libggml.a",
+          "../../../build/static/libcommon.a",
         ]
       }],
+        [ 'OS=="win"', {
+            "libraries": [
+            "../../../build/static/llama-embedder.lib",
+            "../../../build/static/llama.lib",
+            "../../../build/static/ggml.lib",
+            "../../../build/static/common.lib",
+            ]
+        }]
       ],
-      "libraries": [
-        "../../../build/static/libllama-embedder.a",
-        "../../../build/static/libllama.a",
-        "../../../build/static/libggml.a",
-        "../../../build/static/libcommon.a",
-      ]
     }
   ]
 }
