@@ -28,6 +28,8 @@
     "prebuild": "^13.0.1"
   },
   "binary": {
-    "napi_versions": [8]
+    "napi_versions": [
+      8
+    ]
   }
 }
