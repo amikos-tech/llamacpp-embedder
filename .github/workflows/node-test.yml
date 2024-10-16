@@ -77,6 +77,7 @@ jobs:
         run: |
           Add-Content -Path $env:GITHUB_ENV -Value "SHARED_LIB_PATH=../../build/Release"
           Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_BUILD_FLAGS=-j$env:NUMBER_OF_PROCESSORS"
+          Get-ChildItem -Path .\build -Recurse -Directory
       - name: Build and Test
         run: |
           make node-test
@@ -86,6 +87,11 @@ jobs:
           SHARED_LIB_PATH: ${{ env.SHARED_LIB_PATH }}
           CMAKE_FLAGS: ${{ env.CMAKE_FLAGS }}
           CMAKE_BUILD_FLAGS: ${{ env.CMAKE_BUILD_FLAGS }}
+      - name: List dirs
+        if: always() && matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path .\build -Recurse -Directory
 #      - name: Setup tmate session
 #        if: always() && matrix.os == 'windows-latest'
 #        uses: mxschmitt/action-tmate@v3
